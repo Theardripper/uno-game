@@ -61,6 +61,32 @@ declare global {
     type GameHistoryItem = import("./api/responses/players.js").GameHistoryItem;
     type PlayerHistoryData = import("./api/responses/players.js").PlayerHistoryData;
     type GetPlayerHistoryResponse = import("./api/responses/players.js").GetPlayerHistoryResponse;
+
+    type CreateRoomRequest = import("./api/requests/rooms.js").CreateRoomRequest;
+    type UpdateRoomRequest = import("./api/requests/rooms.js").UpdateRoomRequest;
+
+    type RoomResponseData = import("./api/responses/rooms.js").RoomResponseData;
+    type CreateRoomResponse = import("./api/responses/rooms.js").CreateRoomResponse;
+    type RoomValidationData = import("./api/responses/rooms.js").RoomValidationData;
+    type ValidateRoomResponse = import("./api/responses/rooms.js").ValidateRoomResponse;
+    type UpdateRoomResponse = import("./api/responses/rooms.js").UpdateRoomResponse;
+    type LeaderboardItem = import("./api/responses/rooms.js").LeaderboardItem;
+    type LeaderboardData = import("./api/responses/rooms.js").LeaderboardData;
+    type LeaderboardResponse = import("./api/responses/rooms.js").LeaderboardResponse;
+
+    type ErrorCode = import("./api/responses/errors.js").ErrorCode;
+
+    // ==========================================
+    // 🔌 Socket Payloads
+    // ==========================================
+    type JoinRoomPayload = import("./socket/payloads.js").JoinRoomPayload;
+    type PlayCardPayload = import("./socket/payloads.js").PlayCardPayload;
+    type DrawCardPayload = import("./socket/payloads.js").DrawCardPayload;
+    type CallUnoPayload = import("./socket/payloads.js").CallUnoPayload;
+    type RoomStatePayload = import("./socket/payloads.js").RoomStatePayload;
+    type GameStatePayload = import("./socket/payloads.js").GameStatePayload;
+    type NotificationPayload = import("./socket/payloads.js").NotificationPayload;
+    type ErrorPayload = import("./socket/payloads.js").ErrorPayload;
 }
 
 export {};
