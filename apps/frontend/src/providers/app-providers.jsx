@@ -1,6 +1,7 @@
 "use client";
 
-import { SocketProvider } from "@socket/socket-provider";
+import { QueryProvider } from "./query-provider";
+import { SocketProvider } from "./socket-provider";
 
 /**
  * Centraliza todos os Providers globais da aplicação.
@@ -10,8 +11,10 @@ import { SocketProvider } from "@socket/socket-provider";
  */
 export function AppProviders({ children }) {
     return (
-        <SocketProvider>
-            {children}
-        </SocketProvider>
+        <QueryProvider>
+                <SocketProvider>
+                    {children}
+                </SocketProvider>
+        </QueryProvider>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { registerSocketHandlers } from "./handlers";
+import { registerSocketHandlers } from "../socket/handlers";
 
 /**
  * SocketProvider
