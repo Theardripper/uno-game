@@ -3,8 +3,11 @@
  * @typedef {import('./requests').SignInRequest} SignInRequest
  * @typedef {import('./requests').GuestRequest} GuestRequest
  * @typedef {import('./requests').UpdatePlayerProfileRequest} UpdatePlayerProfileRequest
+ * @typedef {import('./requests').CreateRoomRequest} CreateRoomRequest
+ * @typedef {import('./requests').UpdateRoomRequest} UpdateRoomRequest
  * 
  * @typedef {import('./responses').ApiError} ApiError
+ * @typedef {import('./responses').ErrorCode} ErrorCode
  * @typedef {import('./responses').SuccessResponse} SuccessResponse
  * @typedef {import('./responses').ErrorResponse} ErrorResponse
  * @typedef {import('./responses').PaginationMeta} PaginationMeta
@@ -21,6 +24,15 @@
  * @typedef {import('./responses').GameHistoryItem} GameHistoryItem
  * @typedef {import('./responses').PlayerHistoryData} PlayerHistoryData
  * @typedef {import('./responses').GetPlayerHistoryResponse} GetPlayerHistoryResponse
+ * @typedef {import('./responses').RoomResponseData} RoomResponseData
+ * @typedef {import('./responses').CreateRoomResponse} CreateRoomResponse
+ * @typedef {import('./responses').RoomValidationData} RoomValidationData
+ * @typedef {import('./responses').ValidateRoomResponse} ValidateRoomResponse
+ * @typedef {import('./responses').UpdateRoomResponse} UpdateRoomResponse
+ * @typedef {import('./responses').LeaderboardItem} LeaderboardItem
+ * @typedef {import('./responses').LeaderboardData} LeaderboardData
+ * @typedef {import('./responses').LeaderboardResponse} LeaderboardResponse
  */
 
 export { ApiRoutes } from './routes.js';
+export { ErrorCodes } from './responses/index.js';

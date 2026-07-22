@@ -6,6 +6,8 @@
  * @typedef {import('./common').PaginatedData} PaginatedData
  * @typedef {import('./common').PaginatedResponse} PaginatedResponse
  * 
+ * @typedef {import('./errors').ErrorCode} ErrorCode
+ * 
  * @typedef {import('./auth').AuthResponseData} AuthResponseData
  * @typedef {import('./auth').AuthResponse} AuthResponse
  * 
@@ -18,6 +20,15 @@
  * @typedef {import('./players').GameHistoryItem} GameHistoryItem
  * @typedef {import('./players').PlayerHistoryData} PlayerHistoryData
  * @typedef {import('./players').GetPlayerHistoryResponse} GetPlayerHistoryResponse
+ * 
+ * @typedef {import('./rooms').RoomResponseData} RoomResponseData
+ * @typedef {import('./rooms').CreateRoomResponse} CreateRoomResponse
+ * @typedef {import('./rooms').RoomValidationData} RoomValidationData
+ * @typedef {import('./rooms').ValidateRoomResponse} ValidateRoomResponse
+ * @typedef {import('./rooms').UpdateRoomResponse} UpdateRoomResponse
+ * @typedef {import('./rooms').LeaderboardItem} LeaderboardItem
+ * @typedef {import('./rooms').LeaderboardData} LeaderboardData
+ * @typedef {import('./rooms').LeaderboardResponse} LeaderboardResponse
  */
 
-export {};
+export { ErrorCodes } from './errors.js';
