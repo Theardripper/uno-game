@@ -1,7 +1,7 @@
 "use client";
 
-import { getHealth } from "@/api/health.api";
 import { QueryKeys } from "@/query/query-keys";
+import { getHealth } from "@/services/health.service";
 import { useRoom } from "@/store/room/use-room";
 import { socketClient } from "@socket/socket-client";
 import { useQuery } from "@tanstack/react-query";

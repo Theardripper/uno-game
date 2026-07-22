@@ -28,6 +28,10 @@ export async function afterResponse({
             .actions
             .logout();
 
+        if (typeof window !== "undefined") {
+            window.location.href = "/sign-in";
+        }
+
     }
 
     return response;

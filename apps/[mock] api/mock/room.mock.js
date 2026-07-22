@@ -9,5 +9,30 @@ export default {
 
     maxPlayers: 4,
 
-    players: [],
+    players: [
+        {
+            id: "player-1",
+            name: "Player 1",
+            isReady: true,
+            isHost: true,
+        },
+        {
+            id: "player-2",
+            name: "Player 2",
+            isReady: false,
+            isHost: false,
+        },
+        {
+            id: "player-3",
+            username: "Player 3",
+            isReady: false,
+            isHost: false,
+        },
+        {
+            id: "player-4",
+            username: "Player 4",
+            isReady: false,
+            isHost: false,
+        },
+    ],
 };
