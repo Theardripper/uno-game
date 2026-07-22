@@ -1,4 +1,4 @@
-export const ApiRoutes = Object.freeze({
+export const API_ROUTES = Object.freeze({
     AUTH: {
         SIGN_UP: "/api/auth/sign-up",
         SIGN_IN: "/api/auth/sign-in",
@@ -10,6 +10,6 @@ export const ApiRoutes = Object.freeze({
     },
     ROOMS: {
         BASE: "/api/rooms",
-        BY_CODE: (/** @type {string} */ code) => `/api/rooms/${code}`, // Função útil para rotas dinâmicas!
+        BY_CODE: (/** @type {string} */ code) => `/api/rooms/${code}`,
     },
 });

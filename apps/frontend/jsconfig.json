@@ -1,8 +1,42 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@shared": ["../shared/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@shared/*": [
+        "../shared/*"
+      ],
+      "@styles/*": [
+        "./src/styles/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@socket/*": [
+        "./src/socket/*"
+      ],
+      "@store/*": [
+        "./src/store/*"
+      ],
+      "@views/*": [
+        "./src/views/*"
+      ],
+      "@widgets/*": [
+        "./src/widgets/*"
+      ],
+      "@features/*": [
+        "./src/features/*"
+      ],
+      "@entities/*": [
+        "./src/entities/*"
+      ]
     }
-  }
+  },
+  "include": [
+    "**/*.js",
+    "**/*.jsx",
+    "../shared/index.d.ts"
+  ]
 }
