@@ -1,69 +1,165 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
-// Busca a URL do backend nas variáveis de ambiente, com fallback para localhost em desenvolvimento
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-/**
- * Instância única e global do cliente Socket.io (Singleton).
- * * Iniciamos com `autoConnect: false` por um motivo crucial de segurança:
- * Nós NÃO queremos que o Socket tente conectar no exato momento que a página carrega.
- * Precisamos esperar o Zustand carregar o Token JWT do usuário para injetá-lo antes de conectar.
- * * @type {import('socket.io-client').Socket}
- */
-export const socket = io(SOCKET_URL, {
-    autoConnect: false,
-    transports: ['websocket', 'polling'], // Dá prioridade ao WebSocket (menor latência)
-    reconnection: true,                   // Se a internet cair, tenta voltar sozinho
-    reconnectionAttempts: 5,              // Tenta 5 vezes antes de desistir
-    reconnectionDelay: 1000,              // Espera 1 segundo entre cada tentativa
-});
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 /**
- * Conecta o socket ao servidor usando o token de autenticação.
- * Deve ser chamado logo após o login ou quando o Zustand hidratar a store.
- * * @param {string} token - Token JWT do jogador (sessão)
+ * Singleton responsável por encapsular toda a comunicação com o Socket.IO.
+ *
+ * @author Isaac
  */
-export const connectSocket = (token) => {
-    console.log("[Socket Client]", {
-        connected: socket.connected,
-        active: socket.active,
-        id: socket.id,
-    });
+class SocketClient {
+    constructor() {
+        /**
+         *  Instância única do Socket.IO.
+         * A conexão só será iniciada quando o usuário possuir um JWT válido.
+         */
+        this.socket = io(SOCKET_URL, {
+            autoConnect: false,
 
-    if (socket.connected) {
-        console.warn("Já conectado");
-        return;
+            transports: ["websocket", "polling"],
+
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+        });
+
+        if (process.env.NODE_ENV === "development") {
+            this.registerDebugEvents();
+        }
     }
 
-    socket.auth = { token };
+    /**
+     * Registra logs úteis apenas durante o desenvolvimento.
+     */
+    registerDebugEvents() {
+        this.socket.on("connect", () => {
+            console.log(`[Socket] Connected | id=${this.socket.id}`);
+        });
 
-    socket.connect();
-};
+        this.socket.on("disconnect", (reason) => {
+            console.warn(`[Socket] Disconnected | reason=${reason}`);
+        });
 
-/**
- * Desconecta o socket de forma segura.
- * Deve ser chamado quando o usuário sair da Sala.
- */
-export const disconnectSocket = () => {
-    if (socket.connected) {
-        socket.disconnect();
+        this.socket.on("connect_error", (error) => {
+            console.error("[Socket] Connection Error", error.message);
+        });
+
+        this.socket.io.on("reconnect_attempt", (attempt) => {
+            console.log(`[Socket] Reconnect attempt #${attempt}`);
+        });
+
+        this.socket.io.on("reconnect", (attempt) => {
+            console.log(`[Socket] Reconnected after ${attempt} attempts`);
+        });
+
+        this.socket.io.on("reconnect_error", (error) => {
+            console.error("[Socket] Reconnect Error", error.message);
+        });
+
+        this.socket.io.on("reconnect_failed", () => {
+            console.error("[Socket] Reconnect Failed");
+        });
     }
-};
 
-// ==========================================
-// 💡 Listeners Globais para Debugging
-// ==========================================
-// Esses eventos ajudam você a monitorar o estado da rede pelo console do navegador
-if (process.env.NODE_ENV === 'development') {
-    socket.on('connect', () => {
-        console.log(`[Socket Client] Conectado com sucesso! ID: ${socket.id}`);
-    });
+    /**
+     * Inicia a conexão autenticada.
+     *
+     * O JWT é enviado no e ficará disponível
+     * no backend através de: socket.handshake.auth.token
+     *
+     * @param {string} token JWT do player autenticado.
+     */
+    connect(token) {
 
-    socket.on('disconnect', (reason) => {
-        console.warn(`[Socket Client] Desconectado. Motivo: ${reason}`);
-    });
+        if (!token)
+            throw new Error("Socket connection requires a valid JWT token.");
+        ;
 
-    socket.on('connect_error', (error) => {
-        console.error(`[Socket Client] Erro de conexão: ${error.message}`);
-    });
+        if (this.socket.connected || this.socket.active) return;
+
+        this.socket.auth = { token };
+
+        this.socket.connect();
+    }
+
+    /**
+     * Encerra a conexão com o servidor.
+     */
+    disconnect() {
+
+        if (!this.socket.connected) return;
+        this.socket.disconnect();
+    }
+
+    /**
+     * Remove todos os listeners registrados e encerra a conexão.
+     * Útil para logout ou limpeza durante testes.
+     */
+    destroy() {
+
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+    }
+
+    /**
+     * Encaminha um evento para o servidor.
+     * Aceita qualquer assinatura suportada pelo Socket.IO.
+     *
+     * Ex:
+     * emit(event)
+     * emit(event, payload)
+     * emit(event, payload, callback)
+     */
+    emit(...args) { this.socket.emit(...args); }
+
+    /* Registra um listener. */
+    on(...args) { this.socket.on(...args); }
+
+    /* Registra um listener executado apenas uma vez. */
+    once(...args) { this.socket.once(...args); }
+
+    /* Remove um listener. */
+    off(...args) { this.socket.off(...args); }
+
+    /**
+     * Remove todos os listeners.
+     * Se um evento for informado, remove apenas daquele evento.
+     *
+     * @param {string} [event]
+     */
+    removeAllListeners(event) { this.socket.removeAllListeners(event); }
+
+    /**
+     * Indica se existe uma conexão ativa.
+     * @returns {boolean}
+     */
+    isConnected() { return this.socket.connected; }
+
+    /**
+     * Indica se existe uma tentativa de conexão em andamento.
+     * @returns {boolean}
+     */
+    isConnecting() { return this.socket.active && !this.socket.connected; }
+
+    /**
+     * Verifica se existe um token configurado
+     * para autenticação do handshake.
+     *
+     * @returns {boolean}
+     */
+    isAuthenticated() { return Boolean(this.socket.auth?.token); }
+
+    /**
+     * ID atual da conexão.
+     * Será undefined enquanto não conectar.
+     */
+    get id() { return this.socket.id; }
 }
+
+/**
+ * Instância Singleton compartilhada por toda a aplicação.
+ *
+ * Nunca crie novos SocketClient().
+ * Sempre utilize esta instância.
+ */
+export const socketClient = new SocketClient();

@@ -5,8 +5,8 @@
       "@/*": [
         "./src/*"
       ],
-      "@shared": [
-        "../../shared/*"
+      "@shared/*": [
+        "../shared/*"
       ],
       "@styles/*": [
         "./src/styles/*"
@@ -16,6 +16,21 @@
       ],
       "@socket/*": [
         "./src/socket/*"
+      ],
+      "@store/*": [
+        "./src/store/*"
+      ],
+      "@views/*": [
+        "./src/views/*"
+      ],
+      "@widgets/*": [
+        "./src/widgets/*"
+      ],
+      "@features/*": [
+        "./src/features/*"
+      ],
+      "@entities/*": [
+        "./src/entities/*"
       ]
     }
   }

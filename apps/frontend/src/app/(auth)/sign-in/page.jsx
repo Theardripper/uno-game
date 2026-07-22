@@ -1,68 +1,69 @@
-"use client"
+"use client";
 
-import { connectSocket, disconnectSocket, socket } from "@socket/socket-client";
-import { useEffect, useState } from "react";
+import { socketClient } from "@socket/socket-client";
+
+import { useRoom } from "@/store/room/use-room";
 
 export default function Page() {
-    const [lastResponse, setLastResponse] = useState(null);
 
-    useEffect(() => {
-        const handleRoomState = (data, callback) => {
-            console.log("[Page] ROOM STATE:", data);
-            callback();
-        };
+    const room = useRoom();
 
-        const handleNotification = (data, callback) => {
-            console.log("[Page] NOTIFICATION:", data);
-            callback();
-        };
+    const handleConnect = () => socketClient.connect("token-jwt-falso");
 
-        socket.on("server:room-state", handleRoomState);
-        socket.on("server:notification", handleNotification);
+    const handleDisconnect = () => {
 
-        return () => {
-            socket.off("server:room-state", handleRoomState);
-            socket.off("server:notification", handleNotification);
-        };
-    }, []);
-
-    const handleConnectTest = () => {
-        connectSocket('token-jwt-falso-123');
-    }
-
-const handlePlayCardTest = () => {
-    console.log("[Page] PlayCard", {
-        connected: socket.connected,
-        active: socket.active,
-        id: socket.id,
-    });
-
-    socket.emit("client:play-card", {
-        cardId: "red_5",
-    }, (response) => {
-        console.log("Resposta do backend:", response);
-        setLastResponse(response);
-    });
-};
+        socketClient.disconnect();
+        room.actions.reset();
+    };
 
     return (
-        <div className="p-10 flex flex-col gap-4">
-            <button onClick={handleConnectTest} className="bg-blue-500 text-white p-2 cursor-pointer">
-                Testar o Connect
-            </button>
-            <button onClick={handlePlayCardTest} className="bg-green-500 text-white p-2 cursor-pointer">
-                Testar o Play Card
-            </button>
-            <button onClick={disconnectSocket} className="bg-red-500 text-white p-2 cursor-pointer">
-                Testar o Disconnect
+        <div className="p-8 space-y-6">
+
+            <button
+                onClick={handleConnect}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+                Conectar
             </button>
 
-            {lastResponse && (
-                <div className="mt-4 p-4 bg-gray-800 text-white rounded">
-                    <h3 className="font-bold">Última Resposta do Backend:</h3>
-                    <pre className="mt-2 text-sm">{JSON.stringify(lastResponse, null, 2)}</pre>
-                </div>
-            )}
+            <button
+                onClick={handleDisconnect}
+                className="bg-red-600 text-white px-4 py-2 rounded"
+            >
+                Desconectar
+            </button>
+
+            <hr />
+
+            <h2 className="text-2xl font-bold">
+                Sala
+            </h2>
+
+            <p>
+                <strong>Código:</strong> {room.code}
+            </p>
+
+            <p>
+                <strong>Status:</strong> {room.status}
+            </p>
+
+            <p>
+                <strong>Máximo:</strong> {room.maxPlayers}
+            </p>
+
+            <h3 className="font-bold">
+                Jogadores
+            </h3>
+
+            <ul>
+                {room.players.map((player) => (
+                    <li key={player.id}>
+                        {player.name}
+                        {player.isHost && " 👑"}
+                        {player.isReady && " ✅"}
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }
