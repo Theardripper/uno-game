@@ -13,6 +13,9 @@
       ],
       "@components/*": [
         "./src/components/*"
+      ],
+      "@socket/*": [
+        "./src/socket/*"
       ]
     }
   }
