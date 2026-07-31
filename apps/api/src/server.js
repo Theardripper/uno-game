@@ -6,6 +6,7 @@ import playerRoutes from './routes/player.routes.js';
 import gameRoutes from './routes/game.routes.js';
 import cardRoutes from './routes/card.routes.js';
 import scoreRoutes from './routes/score.routes.js';
+import apiRoutes from './routes/api.routes.js';
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use('/api/players', playerRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/cards', cardRoutes);
 app.use('/api/scores', scoreRoutes);
+app.use('/api', apiRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
