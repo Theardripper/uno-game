@@ -5,7 +5,6 @@ import { APP_CONFIG } from "@/config/api.config";
 import { afterResponse } from "./hooks/after-response";
 import { beforeRequest } from "./hooks/before-request";
 
-
 /**
  * Cliente Ky configurado com:
  *

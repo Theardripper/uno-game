@@ -1,3 +1,5 @@
+import { SignUpView } from "@/view/auth/sign-up.view";
+
 export default function Page() {
-    return <h1>Sign Up</h1>
+  return <SignUpView />;
 }

@@ -1,13 +1,13 @@
+import crypto from "crypto";
 import { Router } from "express";
 import { API_ROUTES } from "../../shared/api/routes.js";
 import { mockDB } from "../database/db.js";
-import crypto from "crypto";
 
 const router = Router();
 
 router.post(API_ROUTES.AUTH.SIGN_UP, (req, res) => {
     const { name, email, password } = req.body;
-    
+
     if (!name || !email || !password) {
         return res.status(400).json({ error: "Missing fields" });
     }
@@ -28,14 +28,14 @@ router.post(API_ROUTES.AUTH.SIGN_UP, (req, res) => {
         user: {
             id: newUser.id,
             name: newUser.name,
-        }
+        },
     });
 });
 
 router.post(API_ROUTES.AUTH.SIGN_IN, (req, res) => {
     const { email, password } = req.body;
 
-    const user = mockDB.users.find(u => u.email === email && u.password === password);
+    const user = mockDB.users.find((u) => u.email === email && u.password === password);
 
     if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
@@ -47,7 +47,7 @@ router.post(API_ROUTES.AUTH.SIGN_IN, (req, res) => {
         user: {
             id: user.id,
             name: user.name,
-        }
+        },
     });
 });
 
@@ -68,7 +68,7 @@ router.post(API_ROUTES.AUTH.GUEST, (req, res) => {
         user: {
             id: guestUser.id,
             name: guestUser.name,
-        }
+        },
     });
 });
 

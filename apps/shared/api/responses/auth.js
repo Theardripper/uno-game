@@ -1,7 +1,8 @@
 /**
  * @typedef {Object} AuthResponseData
- * @property {import('../../types/Player').Player} player
- * @property {string} token - JWT Bearer Token
+ * @property {import('../../types/Player').Player} user
+ * @property {string} accessToken - JWT Bearer Token
+ * @property {string} refreshToken - JWT Refresh Token
  */
 
 /**

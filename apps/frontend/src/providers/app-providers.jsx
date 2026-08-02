@@ -1,8 +1,8 @@
 "use client";
 
+import { Toaster } from "@components/ui/toast";
 import { QueryProvider } from "./query-provider";
 import { SocketProvider } from "./socket-provider";
-
 /**
  * Centraliza todos os Providers globais da aplicação.
  *
@@ -14,6 +14,7 @@ export function AppProviders({ children }) {
         <QueryProvider>
                 <SocketProvider>
                     {children}
+                     <Toaster />
                 </SocketProvider>
         </QueryProvider>
     );

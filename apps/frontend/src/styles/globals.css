@@ -45,6 +45,14 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-auth-background: var(--auth-background);
+  --color-auth-input: var(--auth-input);
+  --color-auth-accent: var(--auth-accent);
+  --color-auth-accent-foreground: var(--auth-accent-foreground);
+  --color-auth-link: var(--auth-link);
+  --color-auth-glass: var(--auth-glass);
+  --color-auth-btn-grad-from: var(--auth-btn-grad-from);
+  --color-auth-btn-grad-to: var(--auth-btn-grad-to);
 }
 
 :root {
@@ -80,6 +88,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --auth-background: #2A1B19;
+  --auth-input: #322825;
+  --auth-accent: #FF453A;
+  --auth-accent-foreground: #FFFFFF;
+  --auth-link: #FFB4AA;
+  --auth-glass: rgba(41, 31, 28, 0.9);
+  --auth-btn-grad-from: #FF5545;
+  --auth-btn-grad-to: #C0000A;
+  --auth-btn-shadow: rgba(255, 85, 69, 0.40);
 }
 
 .dark {
@@ -114,6 +131,17 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+
+  --auth-background: #2A1B19;
+  --auth-input: #322825;
+  --auth-accent: #FF453A;
+  --auth-accent-foreground: #FFFFFF;
+  --auth-link: #FFB4AA;
+  --auth-glass: rgba(41, 31, 28, 0.9);
+  --auth-btn-grad-from: #FF5545;
+  --auth-btn-grad-to: #C0000A;
+  --auth-btn-shadow: rgba(255, 85, 69, 0.40);
 }
 
 @layer base {
