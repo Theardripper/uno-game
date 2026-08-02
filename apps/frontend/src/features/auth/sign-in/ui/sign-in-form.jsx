@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { signInSchema } from "../model/sign-in.schema";
 
 /**
  * @typedef {Object} SignInFormProps
@@ -24,19 +27,21 @@ export function SignInForm({ className }) {
   const [showPassword, setShowPassword] = useState(false);
   const { handleLogin, isLoading } = useSignIn();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(signInSchema),
+  });
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
-
-    handleLogin({ email, password });
+  const onSubmit = (data) => {
+    handleLogin(data);
   };
 
   return (
     <div className={cn("flex flex-col gap-6 w-full font-(family-name:--font-rubik)", className)}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         {/* Email Field */}
         <div className="flex flex-col gap-2">
           <Label htmlFor="email" className="text-[11px] font-medium text-gray-300 uppercase tracking-wider pl-1">
@@ -48,15 +53,18 @@ export function SignInForm({ className }) {
             </div>
             <Input
               id="email"
-              name="email"
               type="email"
               placeholder="player@example.com"
               autoComplete="email"
-              required
               disabled={isLoading}
-              className="pl-10"
+              aria-invalid={!!errors.email}
+              className={cn("pl-10", errors.email && "border-red-500")}
+              {...register("email")}
             />
           </div>
+          {errors.email && (
+            <p className="text-red-500 text-xs pl-1">{errors.email.message}</p>
+          )}
         </div>
 
         {/* Password Field */}
@@ -70,13 +78,16 @@ export function SignInForm({ className }) {
             </div>
             <Input
               id="password"
-              name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="••••••••••••••••"
-              required
               disabled={isLoading}
-              className="pl-10 pr-10 font-[family-name:var(--font-jetbrains-mono)] tracking-widest"
+              aria-invalid={!!errors.password}
+              className={cn(
+                "pl-10 pr-10 font-(family-name:--font-jetbrains-mono tracking-widest",
+                errors.password && "border-red-500"
+              )}
+              {...register("password")}
             />
             <button
               type="button"
@@ -92,6 +103,9 @@ export function SignInForm({ className }) {
               )}
             </button>
           </div>
+          {errors.password && (
+            <p className="text-red-500 text-xs pl-1">{errors.password.message}</p>
+          )}
           <div className="flex justify-end mt-1">
             <a
               href="#"

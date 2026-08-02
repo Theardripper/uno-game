@@ -3,10 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppToast } from "@/hooks/use-app-toast";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { signUpSchema } from "../model/sign-up.schema";
 
 /**
  * @typedef {Object} SignUpFormProps
@@ -24,29 +26,25 @@ import { useSignUp } from "../model/use-sign-up";
 export function SignUpForm({ className }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { error } = useAppToast();
   const { handleRegister, isLoading } = useSignUp();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(signUpSchema),
+  });
 
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get("name");
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-
-    if (password !== confirmPassword) {
-      error("As senhas não coincidem. Por favor, verifique.");
-      return;
-    }
-
-    handleRegister({ name, email, password });
+  const onSubmit = (data) => {
+    // Only pass what the backend needs
+    const { confirmPassword, ...payload } = data;
+    handleRegister(payload);
   };
 
   return (
-    <div className={cn("flex flex-col gap-6 w-full font-[family-name:var(--font-rubik)]", className)}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <div className={cn("flex flex-col gap-6 w-full font-(family-name:--font-rubik)", className)}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         {/* Username Field */}
         <div className="flex flex-col gap-2">
           <Label htmlFor="name" className="text-[11px] font-medium text-gray-300 uppercase tracking-wider pl-1">
@@ -58,15 +56,18 @@ export function SignUpForm({ className }) {
             </div>
             <Input
               id="name"
-              name="name"
               type="text"
               placeholder="player"
               autoComplete="username"
-              required
               disabled={isLoading}
-              className="pl-10"
+              aria-invalid={!!errors.name}
+              className={cn("pl-10", errors.name && "border-red-500")}
+              {...register("name")}
             />
           </div>
+          {errors.name && (
+            <p className="text-red-500 text-xs pl-1">{errors.name.message}</p>
+          )}
         </div>
 
         {/* Email Field */}
@@ -80,15 +81,18 @@ export function SignUpForm({ className }) {
             </div>
             <Input
               id="email"
-              name="email"
               type="email"
               placeholder="player@example.com"
               autoComplete="email"
-              required
               disabled={isLoading}
-              className="pl-10"
+              aria-invalid={!!errors.email}
+              className={cn("pl-10", errors.email && "border-red-500")}
+              {...register("email")}
             />
           </div>
+          {errors.email && (
+            <p className="text-red-500 text-xs pl-1">{errors.email.message}</p>
+          )}
         </div>
 
         {/* Password Fields - Side by Side */}
@@ -104,13 +108,16 @@ export function SignUpForm({ className }) {
               </div>
               <Input
                 id="password"
-                name="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="••••••••••••••••"
-                required
                 disabled={isLoading}
-                className="pl-10 pr-10 font-[family-name:var(--font-jetbrains-mono)] tracking-widest"
+                aria-invalid={!!errors.password}
+                className={cn(
+                  "pl-10 pr-10 font-(family-name:--font-jetbrains-mono) tracking-widest",
+                  errors.password && "border-red-500"
+                )}
+                {...register("password")}
               />
               <button
                 type="button"
@@ -126,6 +133,9 @@ export function SignUpForm({ className }) {
                 )}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-xs pl-1">{errors.password.message}</p>
+            )}
           </div>
 
           {/* Confirm Password */}
@@ -139,13 +149,16 @@ export function SignUpForm({ className }) {
               </div>
               <Input
                 id="confirmPassword"
-                name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="••••••••••••••••"
-                required
                 disabled={isLoading}
-                className="pl-10 pr-10 font-[family-name:var(--font-jetbrains-mono)] tracking-widest"
+                aria-invalid={!!errors.confirmPassword}
+                className={cn(
+                  "pl-10 pr-10 font-(family-name:--font-jetbrains-mono) tracking-widest",
+                  errors.confirmPassword && "border-red-500"
+                )}
+                {...register("confirmPassword")}
               />
               <button
                 type="button"
@@ -161,6 +174,9 @@ export function SignUpForm({ className }) {
                 )}
               </button>
             </div>
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-xs pl-1">{errors.confirmPassword.message}</p>
+            )}
           </div>
         </div>
 
