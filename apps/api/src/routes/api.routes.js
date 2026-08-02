@@ -22,5 +22,6 @@ router.post('/games/hand', extractUser, gameController.getPlayerHand);
 router.post('/games/current-player', gameController.getCurrentPlayer);
 router.post('/games/top-card', gameController.getTopCard);
 router.post('/games/scores', gameController.getScores);
+router.post('/games/players', gameController.getGamePlayers);
 
 export default router;

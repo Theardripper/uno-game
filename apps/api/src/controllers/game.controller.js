@@ -150,6 +150,22 @@ export const getGameState = async (req, res) => {
   }
 };
 
+export const getGamePlayers = async (req, res) => {
+  try {
+    const { game_id } = req.body;
+    const game = await Game.findOne({ game_id });
+
+    if (!game) return res.status(404).json({ error: 'Game not found' });
+
+    return res.status(200).json({
+      game_id: game.game_id,
+      players: game.players || []
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const getPlayerHand = async (req, res) => {
   try {
     const { game_id } = req.body;
