@@ -4,7 +4,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+
 app.use(express.json());
 
 const swaggerDocument = YAML.load(path.join(import.meta.dirname, "./docs/swagger.yaml"));
@@ -13,7 +13,4 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/", (req, res) => res.send("API UNO Rodando!"));
 
-app.listen(PORT, () => {
-    console.log("Servidor rodando na porta 3000");
-    console.log("Documentação disponível em: http://localhost:3000/api-docs");
-});
+export default app;

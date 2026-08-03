@@ -24,7 +24,7 @@ importers:
         specifier: ^4.8.3
         version: 4.8.3
 
-  apps/[mock] server:
+  apps/api:
     dependencies:
       express:
         specifier: ^5.2.1
@@ -32,12 +32,6 @@ importers:
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
-
-  apps/api:
-    dependencies:
-      express:
-        specifier: ^5.2.1
-        version: 5.2.1
       swagger-ui-express:
         specifier: ^5.0.1
         version: 5.0.1(express@5.2.1)
@@ -130,12 +124,6 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.3.3
-
-  apps/mock:
-    dependencies:
-      socket.io:
-        specifier: ^4.8.3
-        version: 4.8.3
 
 packages:
 
