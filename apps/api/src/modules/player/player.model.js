@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 
 /**
  * Player model — unified entity (replaces old User.js and Player.js).
@@ -42,7 +42,7 @@ const playerSchema = new mongoose.Schema(
         },
         bot_difficulty: {
             type: String,
-            enum: ['easy', 'medium', 'hard', null],
+            enum: ["easy", "medium", "hard", null],
             default: null,
         },
         last_active_at: {
@@ -75,14 +75,13 @@ const playerSchema = new mongoose.Schema(
             type: String,
         },
     },
-    { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
+    { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
 
-playerSchema.pre('save', function (next) {
+playerSchema.pre("save", function () {
     if (!this.tag) {
         this.tag = `#${Math.floor(1000 + Math.random() * 9000)}`;
     }
-    next();
 });
 
 // ─── Static Methods ──────────────────────────────────────
@@ -116,13 +115,13 @@ playerSchema.methods.comparePassword = async function (enteredPassword) {
  */
 playerSchema.methods.toPublicJSON = function () {
     const xpNextLevel = this.level * 1000; // Simples lógica de progressão
-    
+
     return {
         id: this._id.toString(),
         name: this.name,
         tag: this.tag,
         email: this.email,
-        avatarSeed: this.avatar_seed,
+        avatarSeed: `https://api.dicebear.com/9.x/avataaars/svg?seed=${this.avatar_seed}`,
         coverId: this.cover_id,
         bio: this.bio,
         level: this.level,
@@ -144,6 +143,6 @@ playerSchema.pre(/^find/, function () {
     }
 });
 
-const Player = mongoose.model('Player', playerSchema);
+const Player = mongoose.model("Player", playerSchema);
 
 export default Player;
