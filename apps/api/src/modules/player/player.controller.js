@@ -21,27 +21,26 @@ export const getMe = async (req, res, next) => {
 };
 
 export const getStats = async (req, res, next) => {
-  try {
-    const stats = {
-      totalMatches: 42,
-      wins: 15,
-      winRate: 35.7,
-      totalCardsPlayed: 1450,
-      totalCardsDrawn: 890,
-      timesShoutedUno: 22,
-    };
-    return success(res, { stats }, 'Player stats fetched successfully');
-  } catch (error) {
-    next(error);
-  }
+    try {
+        const stats = {
+            totalMatches: 42,
+            wins: 15,
+            winRate: 35.7,
+            totalCardsPlayed: 1450,
+            timesShoutedUno: 22,
+        };
+        return success(res, { stats }, "Player stats fetched successfully");
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getHistory = async (req, res, next) => {
-  try {
-    return success(res, { history: [] }, 'Player history fetched successfully');
-  } catch (error) {
-    next(error);
-  }
+    try {
+        return success(res, { history: [] }, "Player history fetched successfully");
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getPlayerById = async (req, res, next) => {
