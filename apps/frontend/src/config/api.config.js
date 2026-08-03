@@ -2,7 +2,7 @@ export const APP_CONFIG = {
 
     apiURL:
         process.env.NEXT_PUBLIC_API_URL ??
-        "http://localhost:4000",
+        "http://localhost:3001",
 
     requestTimeout: 10000,
 
