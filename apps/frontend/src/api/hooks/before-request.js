@@ -1,4 +1,5 @@
 import { useAuthStore } from "@store/auth/auth.store";
+import Cookies from "js-cookie";
 
 /**
  * Executado imediatamente antes de qualquer requisição.
@@ -14,7 +15,7 @@ import { useAuthStore } from "@store/auth/auth.store";
  */
 export async function beforeRequest({ request, options }) {
 
-    const token = useAuthStore.getState().accessToken;
+    const token = useAuthStore.getState().accessToken || Cookies.get("accessToken");
 
     request.headers.set("Accept", "application/json");
 
