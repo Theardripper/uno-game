@@ -1,27 +1,26 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import { connectDB } from './config/db.js';
+import { env } from '#config/env.js';
+import { connectDB } from '#config/db.js';
+import { createApp } from '#app.js';
 
-import playerRoutes from './routes/player.routes.js';
-import gameRoutes from './routes/game.routes.js';
-import cardRoutes from './routes/card.routes.js';
-import scoreRoutes from './routes/score.routes.js';
+/**
+ * Server entry point.
+ * Connects to the database, creates the app, and starts listening.
+ */
+async function start() {
+    try {
+        await connectDB();
 
-dotenv.config();
+        const app = createApp();
+        const PORT = env.PORT;
 
-const app = express();
-app.use(express.json());
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`📚 Documentation at http://localhost:${PORT}/api-docs`);
+        });
+    } catch (error) {
+        console.error('💥 Failed to start server:', error.message);
+        process.exit(1);
+    }
+}
 
-// Conecta ao MongoDB
-connectDB();
-
-// Registra as rotas conforme a especificação
-app.use('/api/players', playerRoutes);
-app.use('/api/games', gameRoutes);
-app.use('/api/cards', cardRoutes);
-app.use('/api/scores', scoreRoutes);
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(` Server running in port ${PORT}`);
-});
+start();
