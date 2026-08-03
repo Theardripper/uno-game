@@ -1,5 +1,5 @@
-import { Footer } from "@/components/ui/footer";
-import { Header } from "@/components/ui/header";
+import { Footer } from "@/components/layout/footer";
+import { Header } from "@/components/layout/header";
 
 /**
  * Layout padrão para páginas públicas (não autenticadas).
