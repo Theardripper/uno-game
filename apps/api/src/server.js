@@ -3,13 +3,13 @@ import express from "express";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import { connectDB } from "./config/db.js";
+import { connectDB } from "#config/db.js";
 
-import apiRoutes from "./routes/api.routes.js";
-import cardRoutes from "./routes/card.routes.js";
-import gameRoutes from "./routes/game.routes.js";
-import playerRoutes from "./routes/player.routes.js";
-import scoreRoutes from "./routes/score.routes.js";
+import apiRoutes from "#routes/api.routes.js";
+import cardRoutes from "#routes/card.routes.js";
+import gameRoutes from "#routes/game.routes.js";
+import playerRoutes from "#routes/player.routes.js";
+import scoreRoutes from "#routes/score.routes.js";
 
 dotenv.config();
 
