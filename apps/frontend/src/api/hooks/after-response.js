@@ -19,7 +19,10 @@ export async function afterResponse({
     response,
 }) {
 
-    if (response.status === 401) {
+    // Ignorar 401 em rotas de login/registro, senão a página recarrega em vez de exibir erro
+    const isAuthRoute = request.url.includes('/auth/sign-in') || request.url.includes('/auth/sign-up');
+
+    if (response.status === 401 && !isAuthRoute) {
 
         console.warn("[API] Unauthorized");
 
