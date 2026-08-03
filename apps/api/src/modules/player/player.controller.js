@@ -14,7 +14,7 @@ export const getMe = async (req, res, next) => {
     try {
         const player = await playerService.getPlayerById(req.user.id);
         if (!player) return res.status(404).json({ error: "Player not found" });
-        return success(res, player, "Current player fetched successfully");
+        return success(res, { player: player.toPublicJSON() }, "Current player fetched successfully");
     } catch (error) {
         next(error);
     }
@@ -48,7 +48,7 @@ export const getPlayerById = async (req, res, next) => {
     try {
         const player = await playerService.getPlayerById(req.params.id);
         if (!player) return res.status(404).json({ error: "Player not found" });
-        return success(res, player, "Player fetched successfully");
+        return success(res, { player: player.toPublicJSON() }, "Player fetched successfully");
     } catch (error) {
         next(error);
     }

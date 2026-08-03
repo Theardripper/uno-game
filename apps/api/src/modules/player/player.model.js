@@ -53,9 +53,37 @@ const playerSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        cover_id: {
+            type: Number,
+            default: 1,
+            enum: [1, 2, 3, 4],
+        },
+        bio: {
+            type: String,
+            default: "",
+            maxlength: 120,
+        },
+        level: {
+            type: Number,
+            default: 1,
+        },
+        current_xp: {
+            type: Number,
+            default: 0,
+        },
+        tag: {
+            type: String,
+        },
     },
     { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
+
+playerSchema.pre('save', function (next) {
+    if (!this.tag) {
+        this.tag = `#${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+    next();
+});
 
 // ─── Static Methods ──────────────────────────────────────
 
@@ -87,11 +115,19 @@ playerSchema.methods.comparePassword = async function (enteredPassword) {
  * @returns {object}
  */
 playerSchema.methods.toPublicJSON = function () {
+    const xpNextLevel = this.level * 1000; // Simples lógica de progressão
+    
     return {
         id: this._id.toString(),
         name: this.name,
+        tag: this.tag,
         email: this.email,
         avatarSeed: this.avatar_seed,
+        coverId: this.cover_id,
+        bio: this.bio,
+        level: this.level,
+        currentXp: this.current_xp,
+        xpNextLevel: xpNextLevel,
         isGuest: this.is_guest,
         isBot: this.is_bot,
     };
