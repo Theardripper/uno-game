@@ -1,17 +1,26 @@
-import { verifyToken } from '../config/jwt.js';
+import { verifyToken } from "#config/jwt.js";
+import { AppError } from "#shared/errors/AppError.js";
 
+/**
+ * Middleware that extracts and verifies the JWT from the Authorization header.
+ * Attaches decoded user payload to req.user.
+ *
+ * Expected header: Authorization: Bearer <token>
+ */
 export const extractUser = (req, res, next) => {
-  const token = req.body?.access_token || req.headers.authorization?.replace('Bearer ', '');
+    const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).json({ error: 'Token not provided' });
-  }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        throw new AppError("Token not provided", 401, "UNAUTHORIZED");
+    }
 
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
-  }
+    const token = authHeader.replace("Bearer ", "");
+    const decoded = verifyToken(token);
 
-  req.user = decoded;
-  next();
+    if (!decoded) {
+        throw new AppError("Invalid or expired token", 401, "INVALID_TOKEN");
+    }
+
+    req.user = decoded;
+    next();
 };

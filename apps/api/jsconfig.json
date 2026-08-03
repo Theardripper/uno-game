@@ -4,5 +4,9 @@
     "paths": {
       "#*": ["src/*"]
     }
-  }
+  },
+  "include": [
+    "src/**/*.js",
+    "../shared/index.d.ts"
+  ]
 }
