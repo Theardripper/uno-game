@@ -26,7 +26,6 @@ roomSchema.set('toJSON', {
     delete ret._id;
     delete ret.__v;
     delete ret.password; // Ocultar a senha da resposta JSON
-    delete ret.players;  // Para manter a resposta idêntica ao Swagger
   },
 });
 

@@ -39,6 +39,51 @@ export const validateRoomCode = async (code) => {
     return room;
 };
 
+export const getRoomByCode = async (code) => {
+    const room = await Room.findOne({ code }).lean();
+    if (!room) {
+        throw new AppError("Sala não encontrada", 404);
+    }
+    
+    // Fetch player details
+    const Player = (await import("../player/player.model.js")).default;
+    const players = await Player.find({ _id: { $in: room.players } });
+    
+    // Format the players like toPublicJSON
+    room.playerDetails = players.map(p => ({
+        id: p._id.toString(),
+        name: p.name,
+        tag: p.tag,
+        avatarSeed: `https://api.dicebear.com/9.x/avataaars/svg?seed=${p.avatar_seed}`,
+        level: p.level
+    }));
+
+    return room;
+};
+
+export const joinRoom = async (code, playerId) => {
+    const room = await Room.findOne({ code });
+    if (!room) {
+        throw new AppError("Sala não encontrada", 404);
+    }
+
+    if (room.status !== "waiting") {
+        throw new AppError("Jogo já iniciado ou finalizado", 409);
+    }
+
+    if (room.players.includes(playerId)) {
+        return room;
+    }
+
+    if (room.players.length >= room.maxPlayers) {
+        throw new AppError("Sala cheia", 409);
+    }
+
+    room.players.push(playerId);
+    await room.save();
+    return room;
+};
+
 export const updateRoom = async (id, hostId, data) => {
     const room = await Room.findById(id);
     if (!room) {
@@ -67,4 +112,29 @@ export const deleteRoom = async (id, hostId) => {
 
     await room.deleteOne();
     return true;
+};
+
+export const leaveRoom = async (code, playerId) => {
+    const room = await Room.findOne({ code });
+    if (!room) {
+        throw new AppError("Sala não encontrada", 404);
+    }
+
+    if (!room.players.includes(playerId)) {
+        return await getRoomByCode(code);
+    }
+
+    room.players = room.players.filter(id => id !== playerId);
+    
+    if (room.players.length === 0) {
+        await room.deleteOne();
+        return null;
+    }
+
+    if (room.hostId === playerId) {
+        room.hostId = room.players[0];
+    }
+
+    await room.save();
+    return await getRoomByCode(code);
 };
