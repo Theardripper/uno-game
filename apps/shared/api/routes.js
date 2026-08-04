@@ -1,21 +1,24 @@
 export const API_ROUTES = Object.freeze({
     AUTH: {
-        SIGN_UP: "/api/auth/sign-up",
-        SIGN_IN: "/api/auth/sign-in",
-        GUEST: "/api/auth/guest",
+        SIGN_UP: "/auth/sign-up",
+        SIGN_IN: "/auth/sign-in",
+        GUEST: "/auth/guest",
     },
     PLAYERS: {
-        ME: "/api/players/me",
-        STATS: "/api/players/me/stats",
-        HISTORY: "/api/players/me/history",
+        ME: "/players/me",
+        STATS: "/players/me/stats",
+        HISTORY: "/players/me/history",
     },
     ROOMS: {
-        BASE: "/api/rooms",
-        BY_CODE: (/** @type {string} */ code) => `/api/rooms/${code}`,
-        BY_ID: (/** @type {string} */ id) => `/api/rooms/${id}`,
+        BASE: "/rooms",
+        JOIN: "/rooms/join",
+        VALIDATE: (code) => `/rooms/validate/${code}`,
+        GET: (code) => `/rooms/${code}`,
+        BY_CODE: (/** @type {string} */ code) => `/rooms/${code}`,
+        BY_ID: (/** @type {string} */ id) => `/rooms/${id}`,
     },
     GAMES: {
-        BY_ID: (/** @type {string} */ id) => `/api/games/${id}`,
+        BY_ID: (/** @type {string} */ id) => `/games/${id}`,
     },
-    LEADERBOARD: "/api/leaderboard",
+    LEADERBOARD: "/leaderboard",
 });
