@@ -12,6 +12,7 @@ const initialState = {
     status: null,
     maxPlayers: 0,
     players: [],
+    playerDetails: [],
 };
 
 /**
