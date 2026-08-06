@@ -20,6 +20,16 @@ export const getMe = async (req, res, next) => {
     }
 };
 
+export const updateMe = async (req, res, next) => {
+    try {
+        const player = await playerService.updatePlayer(req.user.id, req.body);
+        if (!player) return res.status(404).json({ error: "Player not found" });
+        return success(res, { player: player.toPublicJSON() }, "Player updated successfully");
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const getStats = async (req, res, next) => {
   try {
     const stats = {

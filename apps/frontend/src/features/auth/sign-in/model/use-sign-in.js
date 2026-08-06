@@ -18,11 +18,11 @@ export function useSignIn() {
       console.log(response);
 
       setAuth({
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
+        accessToken: response.data.token,
+        refreshToken: null,
       });
 
-      Cookies.set("accessToken", response.accessToken, { path: "/" });
+      Cookies.set("accessToken", response.data.token, { path: "/" });
 
       success("Login realizado com sucesso!", "Bem-vindo(a) de volta!");
       router.push("/lobby");

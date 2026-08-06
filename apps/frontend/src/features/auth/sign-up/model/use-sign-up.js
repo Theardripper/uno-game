@@ -4,6 +4,7 @@ import { useAppToast } from "@/hooks/use-app-toast";
 import { register } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth/auth.store";
 import { useMutation } from "@tanstack/react-query";
+import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
 export function useSignUp() {
@@ -15,9 +16,11 @@ export function useSignUp() {
     mutationFn: register,
     onSuccess: (response) => {
       setAuth({
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
+        accessToken: response.data.token,
+        refreshToken: null,
       });
+
+      Cookies.set("accessToken", response.data.token, { path: "/" });
 
       success("Sua conta foi criada com sucesso!", "Bem-vindo(a)!");
       router.push("/lobby");

@@ -6,10 +6,14 @@ import { create } from "zustand";
  * Representa os tokens de acesso e refresh,
  * além do status de autenticação do usuário.
  */
+import Cookies from "js-cookie";
+
+const token = typeof window !== "undefined" ? Cookies.get("accessToken") : null;
+
 const initialState = {
-    accessToken: null,
+    accessToken: token || null,
     refreshToken: null,
-    isAuthenticated: false,
+    isAuthenticated: !!token,
 };
 
 /**

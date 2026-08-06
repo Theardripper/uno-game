@@ -19,6 +19,24 @@ export const validateRoomCode = async (req, res, next) => {
     }
 };
 
+export const getRoomByCode = async (req, res, next) => {
+    try {
+        const room = await roomService.getRoomByCode(req.params.code);
+        return success(res, { room }, 'Sala recuperada com sucesso', 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const joinRoom = async (req, res, next) => {
+    try {
+        const room = await roomService.joinRoom(req.body.roomCode, req.user.id);
+        return success(res, { room }, 'Entrou na sala com sucesso', 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const updateRoom = async (req, res, next) => {
     try {
         const room = await roomService.updateRoom(req.params.id, req.user.id, req.body);

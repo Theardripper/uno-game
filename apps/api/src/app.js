@@ -27,6 +27,7 @@ export function createApp() {
     registerModuleRoutes(app);
 
     app.get("/", (req, res) => res.json({ status: "ok", message: "UNO Game API running!" }));
+    app.get("/api/health", (req, res) => res.json({ status: "ok", version: "1.0.0", message: "API is healthy!" }));
 
     // Global Error Handle
     app.use(errorHandler);
