@@ -76,9 +76,22 @@ export function setupGameGateway(io) {
             }
         });
 
-        socket.on("disconnect", () => {
+        socket.on("disconnect", async () => {
             console.log(`Cliente desconectado: ${socket.id}`);
-            // Removido o leaveRoom daqui pois causava bug de remoção ao dar reload na página
+            
+            if (socket.roomCode && socket.playerId) {
+                try {
+                    const { leaveRoom } = await import("../room/room.service.js");
+                    const updatedRoom = await leaveRoom(socket.roomCode, socket.playerId);
+                    
+                    if (updatedRoom) {
+                        io.to(socket.roomCode).emit("room:state-updated", updatedRoom);
+                    }
+                    console.log(`[DISCONNECT] Jogador ${socket.playerId} removido automaticamente da sala ${socket.roomCode}`);
+                } catch (error) {
+                    // Ignore errors if the room is already destroyed or player not found
+                }
+            }
         });
     });
 }

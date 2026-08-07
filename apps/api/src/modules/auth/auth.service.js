@@ -70,6 +70,7 @@ export async function signIn(email, password) {
 export async function guest(name, avatarSeed) {
     const player = await Player.create({
         name,
+        email: `guest_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@guest.local`,
         avatar_seed: avatarSeed,
         is_guest: true,
     });
