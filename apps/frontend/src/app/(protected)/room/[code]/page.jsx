@@ -29,6 +29,7 @@ export default function WaitingRoomPage() {
   };
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isStarting, setIsStarting] = useState(false);
 
   const { accessToken } = useAuth();
 
@@ -144,6 +145,8 @@ export default function WaitingRoomPage() {
   const canStart = room.playerDetails?.length >= 2;
 
   const handleStartGame = () => {
+    if (isStarting) return;
+    setIsStarting(true);
     socketClient.emit("game:start", { roomCode: code });
   };
 
@@ -222,9 +225,9 @@ export default function WaitingRoomPage() {
 
             <div className="pt-6 flex justify-center">
               {isHost ? (
-                <Button size="lg" className="w-full max-w-sm h-14 text-lg" disabled={!canStart} onClick={handleStartGame}>
+                <Button size="lg" className="w-full max-w-sm h-14 text-lg" disabled={!canStart || isStarting} onClick={handleStartGame}>
                   <Play className="mr-2 h-6 w-6" />
-                  Iniciar Partida
+                  {isStarting ? "Iniciando..." : "Iniciar Partida"}
                 </Button>
               ) : (
                 <div className="text-center p-4 rounded-lg bg-muted/50 border border-muted w-full animate-pulse">
