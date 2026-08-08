@@ -1,17 +1,23 @@
 import { jest } from '@jest/globals';
 
-jest.mock('#shared/helpers/response.js', () => ({
+// Mocks dos módulos usados pelo controller (ESM nativo -> jest.unstable_mockModule
+// em vez de jest.mock, que depende de require e não funciona neste projeto)
+const responseHelperMock = {
     success: jest.fn(),
-}));
+};
 
-jest.mock('./player.service.js', () => ({
+const playerServiceMock = {
     createPlayer: jest.fn(),
     getPlayerById: jest.fn(),
     updatePlayer: jest.fn(),
     deletePlayer: jest.fn(),
-}));
+};
 
-import {
+jest.unstable_mockModule('#shared/helpers/response.js', () => responseHelperMock);
+jest.unstable_mockModule('./player.service.js', () => playerServiceMock);
+
+// Import dinâmico DEPOIS de registrar os mocks (obrigatório em ESM)
+const {
     createPlayer,
     getMe,
     updateMe,
@@ -20,9 +26,9 @@ import {
     getPlayerById,
     updatePlayer,
     deletePlayer,
-} from './player.controller.js';
-import { success } from '#shared/helpers/response.js';
-import * as playerService from './player.service.js';
+} = await import('./player.controller.js');
+const { success } = await import('#shared/helpers/response.js');
+const playerService = await import('./player.service.js');
 
 describe('Player Controller', () => {
     let req, res, next;
