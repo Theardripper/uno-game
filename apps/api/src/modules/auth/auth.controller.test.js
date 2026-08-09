@@ -1,18 +1,24 @@
 import { jest } from '@jest/globals';
 
-jest.mock('#shared/helpers/response.js', () => ({
+// Mocks dos módulos usados pelo controller (ESM nativo -> jest.unstable_mockModule
+// em vez de jest.mock, que depende de require e não funciona neste projeto)
+const responseHelperMock = {
     success: jest.fn(),
-}));
+};
 
-jest.mock('./auth.service.js', () => ({
+const authServiceMock = {
     signUp: jest.fn(),
     signIn: jest.fn(),
     guest: jest.fn(),
-}));
+};
 
-import { signUp, signIn, guestLogin } from './auth.controller.js';
-import { success } from '#shared/helpers/response.js';
-import * as authService from './auth.service.js';
+jest.unstable_mockModule('#shared/helpers/response.js', () => responseHelperMock);
+jest.unstable_mockModule('./auth.service.js', () => authServiceMock);
+
+// Import dinâmico DEPOIS de registrar os mocks (obrigatório em ESM)
+const { signUp, signIn, guestLogin } = await import('./auth.controller.js');
+const { success } = await import('#shared/helpers/response.js');
+const authService = await import('./auth.service.js');
 
 describe('Auth Controller', () => {
     let req, res, next;
