@@ -38,6 +38,9 @@
     "collectCoverageFrom": [
       "src/**/*.js",
       "!src/**/*.test.js",
+      "!src/**/*.model.js",
+      "!src/**/*.routes.js",
+      "!src/**/index.js",
       "!src/server.js",
       "!src/config/**"
     ],
