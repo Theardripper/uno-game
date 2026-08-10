@@ -18,12 +18,13 @@ describe('validateMiddleware - validate', () => {
         const parsedData = { email: 'john@example.com', password: '123456' };
         const schema = mockSchema({ success: true, data: parsedData });
         const req = { body: { email: 'john@example.com', password: '123456', extraField: 'ignorar' } };
+        const originalBody = req.body;
         const res = mockRes();
         const next = jest.fn();
 
         validate(schema)(req, res, next);
 
-        expect(schema.safeParse).toHaveBeenCalledWith(req.body);
+        expect(schema.safeParse).toHaveBeenCalledWith(originalBody);
         expect(req.body).toEqual(parsedData);
         expect(next).toHaveBeenCalledTimes(1);
         expect(res.status).not.toHaveBeenCalled();
