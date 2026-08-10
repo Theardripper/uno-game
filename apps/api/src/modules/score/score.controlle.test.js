@@ -1,200 +1,197 @@
 import { jest } from '@jest/globals';
 
-jest.mock('#shared/helpers/response.js', () => ({
+const responseHelperMock = {
     success: jest.fn(),
-}));
+};
 
-jest.mock('./score.service.js', () => ({
+const scoreServiceMock = {
     createScore: jest.fn(),
     getScoreById: jest.fn(),
     updateScore: jest.fn(),
     deleteScore: jest.fn(),
-}));
+};
 
-import { createScore, getScoreById, updateScore, deleteScore } from './score.controller.js';
-import { success } from '#shared/helpers/response.js';
-import * as scoreService from './score.service.js';
+jest.unstable_mockModule('#shared/helpers/response.js', () => responseHelperMock);
+jest.unstable_mockModule('./score.service.js', () => scoreServiceMock);
 
-describe('Score Controller', () => {
-    let req, res, next;
+const { createScore, getScoreById, updateScore, deleteScore } = await import('./score.controller.js');
+const { success } = await import('#shared/helpers/response.js');
+const scoreService = await import('./score.service.js');
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+function mockReq(overrides = {}) {
+    return { body: {}, params: {}, ...overrides };
+}
 
-        req = {
-            body: {},
-            params: {},
-        };
-        res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-        };
-        next = jest.fn();
+function mockRes() {
+    const res = {};
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
+    return res;
+}
+
+beforeEach(() => {
+    jest.clearAllMocks();
+});
+
+// ===================== createScore =====================
+describe('ScoreController - createScore', () => {
+    it('deve criar a pontuação e responder via helper success (201)', async () => {
+        const req = mockReq({ body: { game_id: 111, player: 'p1', points: 50 } });
+        const res = mockRes();
+        const next = jest.fn();
+        const created = { _id: 's1', ...req.body };
+
+        scoreService.createScore.mockResolvedValue(created);
+
+        await createScore(req, res, next);
+
+        expect(scoreService.createScore).toHaveBeenCalledWith(req.body);
+        expect(success).toHaveBeenCalledWith(res, created, 'Score created successfully', 201);
+        expect(next).not.toHaveBeenCalled();
     });
 
-    /* =========================================================================
-       5.1. createScore
-       ========================================================================= */
-    describe('createScore', () => {
-        it('deve criar o registro de pontuação com sucesso passando os dados do body e retornar status 201', async () => {
-            req.body = {
-                player_id: 'p1',
-                game_id: 'g1',
-                points: 100,
-            };
-            const mockServiceData = { id: 's1', player_id: 'p1', game_id: 'g1', points: 100 };
-            scoreService.createScore.mockResolvedValue(mockServiceData);
+    it('deve chamar next(error) quando o service lançar um erro', async () => {
+        const req = mockReq({ body: { game_id: 111 } });
+        const res = mockRes();
+        const next = jest.fn();
+        const error = new Error('Falha ao criar');
 
-            await createScore(req, res, next);
+        scoreService.createScore.mockRejectedValue(error);
 
-            expect(scoreService.createScore).toHaveBeenCalledWith(req.body);
-            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Score created successfully', 201);
-            expect(next).not.toHaveBeenCalled();
-        });
+        await createScore(req, res, next);
 
-        it('deve propagar qualquer erro para o middleware next(error) em caso de falha no serviço ou validação', async () => {
-            req.body = {
-                player_id: 'p1',
-                game_id: 'g1',
-                points: 100,
-            };
-            const mockError = new Error('Erro de validação');
-            scoreService.createScore.mockRejectedValue(mockError);
+        expect(next).toHaveBeenCalledWith(error);
+        expect(success).not.toHaveBeenCalled();
+    });
+});
 
-            await createScore(req, res, next);
+// ===================== getScoreById =====================
+describe('ScoreController - getScoreById', () => {
+    it('deve retornar a pontuação encontrada via helper success', async () => {
+        const req = mockReq({ params: { id: 's1' } });
+        const res = mockRes();
+        const next = jest.fn();
+        const score = { _id: 's1', points: 50 };
 
-            expect(scoreService.createScore).toHaveBeenCalledWith(req.body);
-            expect(next).toHaveBeenCalledWith(mockError);
-            expect(success).not.toHaveBeenCalled();
-        });
+        scoreService.getScoreById.mockResolvedValue(score);
+
+        await getScoreById(req, res, next);
+
+        expect(scoreService.getScoreById).toHaveBeenCalledWith('s1');
+        expect(success).toHaveBeenCalledWith(res, score, 'Score fetched successfully');
     });
 
-    /* =========================================================================
-       5.2. getScoreById
-       ========================================================================= */
-    describe('getScoreById', () => {
-        it('deve buscar e retornar a pontuação correspondente ao ID informado com status 200', async () => {
-            req.params.id = 's1';
-            const mockServiceData = { id: 's1', player_id: 'p1', game_id: 'g1', points: 100 };
-            scoreService.getScoreById.mockResolvedValue(mockServiceData);
+    it('deve retornar 404 quando a pontuação não for encontrada', async () => {
+        const req = mockReq({ params: { id: 'nao-existe' } });
+        const res = mockRes();
+        const next = jest.fn();
 
-            await getScoreById(req, res, next);
+        scoreService.getScoreById.mockResolvedValue(null);
 
-            expect(scoreService.getScoreById).toHaveBeenCalledWith('s1');
-            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Score fetched successfully');
-            expect(next).not.toHaveBeenCalled();
-        });
+        await getScoreById(req, res, next);
 
-        it('deve retornar status 404 caso o scoreService.getScoreById retorne um valor nulo/falso', async () => {
-            req.params.id = 'inexistente';
-            scoreService.getScoreById.mockResolvedValue(null);
-
-            await getScoreById(req, res, next);
-
-            expect(scoreService.getScoreById).toHaveBeenCalledWith('inexistente');
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Score not found' });
-            expect(success).not.toHaveBeenCalled();
-            expect(next).not.toHaveBeenCalled();
-        });
-
-        it('deve repassar qualquer exceção para o next(error) se o serviço falhar', async () => {
-            req.params.id = 's1';
-            const mockError = new Error('Erro inesperado');
-            scoreService.getScoreById.mockRejectedValue(mockError);
-
-            await getScoreById(req, res, next);
-
-            expect(scoreService.getScoreById).toHaveBeenCalledWith('s1');
-            expect(next).toHaveBeenCalledWith(mockError);
-            expect(success).not.toHaveBeenCalled();
-        });
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Score not found' });
+        expect(success).not.toHaveBeenCalled();
     });
 
-    /* =========================================================================
-       5.3. updateScore
-       ========================================================================= */
-    describe('updateScore', () => {
-        it('deve atualizar a pontuação com sucesso e retornar o status 200 usando o helper success', async () => {
-            req.params.id = 's1';
-            req.body = { points: 250 };
-            const mockServiceData = { id: 's1', player_id: 'p1', game_id: 'g1', points: 250 };
-            scoreService.updateScore.mockResolvedValue(mockServiceData);
+    it('deve chamar next(error) quando o service lançar um erro', async () => {
+        const req = mockReq({ params: { id: 's1' } });
+        const res = mockRes();
+        const next = jest.fn();
+        const error = new Error('Falha inesperada');
 
-            await updateScore(req, res, next);
+        scoreService.getScoreById.mockRejectedValue(error);
 
-            expect(scoreService.updateScore).toHaveBeenCalledWith('s1', req.body);
-            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Score updated successfully');
-            expect(next).not.toHaveBeenCalled();
-        });
+        await getScoreById(req, res, next);
 
-        it('deve retornar status 404 se o registro a ser atualizado não for localizado pelo serviço', async () => {
-            req.params.id = 'inexistente';
-            req.body = { points: 250 };
-            scoreService.updateScore.mockResolvedValue(null);
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
 
-            await updateScore(req, res, next);
+// ===================== updateScore =====================
+describe('ScoreController - updateScore', () => {
+    it('deve atualizar a pontuação e responder via helper success', async () => {
+        const req = mockReq({ params: { id: 's1' }, body: { points: 75 } });
+        const res = mockRes();
+        const next = jest.fn();
+        const updated = { _id: 's1', points: 75 };
 
-            expect(scoreService.updateScore).toHaveBeenCalledWith('inexistente', req.body);
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Score not found' });
-            expect(success).not.toHaveBeenCalled();
-            expect(next).not.toHaveBeenCalled();
-        });
+        scoreService.updateScore.mockResolvedValue(updated);
 
-        it('deve propagar exceções lançadas pelo serviço utilizando next(error)', async () => {
-            req.params.id = 's1';
-            req.body = { points: 250 };
-            const mockError = new Error('Erro inesperado');
-            scoreService.updateScore.mockRejectedValue(mockError);
+        await updateScore(req, res, next);
 
-            await updateScore(req, res, next);
-
-            expect(scoreService.updateScore).toHaveBeenCalledWith('s1', req.body);
-            expect(next).toHaveBeenCalledWith(mockError);
-            expect(success).not.toHaveBeenCalled();
-        });
+        expect(scoreService.updateScore).toHaveBeenCalledWith('s1', req.body);
+        expect(success).toHaveBeenCalledWith(res, updated, 'Score updated successfully');
     });
 
-    /* =========================================================================
-       5.4. deleteScore
-       ========================================================================= */
-    describe('deleteScore', () => {
-        it('deve remover a pontuação com sucesso e retornar a resposta do helper success com payload null', async () => {
-            req.params.id = 's1';
-            const mockServiceData = { id: 's1', player_id: 'p1', game_id: 'g1', points: 100 };
-            scoreService.deleteScore.mockResolvedValue(mockServiceData);
+    it('deve retornar 404 quando a pontuação a ser atualizada não existir', async () => {
+        const req = mockReq({ params: { id: 'nao-existe' }, body: { points: 10 } });
+        const res = mockRes();
+        const next = jest.fn();
 
-            await deleteScore(req, res, next);
+        scoreService.updateScore.mockResolvedValue(null);
 
-            expect(scoreService.deleteScore).toHaveBeenCalledWith('s1');
-            expect(success).toHaveBeenCalledWith(res, null, 'Score removed successfully');
-            expect(next).not.toHaveBeenCalled();
-        });
+        await updateScore(req, res, next);
 
-        it('deve retornar status 404 caso a pontuação a ser deletada não seja encontrada', async () => {
-            req.params.id = 'inexistente';
-            scoreService.deleteScore.mockResolvedValue(null);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Score not found' });
+        expect(success).not.toHaveBeenCalled();
+    });
 
-            await deleteScore(req, res, next);
+    it('deve chamar next(error) quando o service lançar um erro', async () => {
+        const req = mockReq({ params: { id: 's1' }, body: {} });
+        const res = mockRes();
+        const next = jest.fn();
+        const error = new Error('Falha ao atualizar');
 
-            expect(scoreService.deleteScore).toHaveBeenCalledWith('inexistente');
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Score not found' });
-            expect(success).not.toHaveBeenCalled();
-            expect(next).not.toHaveBeenCalled();
-        });
+        scoreService.updateScore.mockRejectedValue(error);
 
-        it('deve chamar next(error) se houver qualquer exceção durante a execução do serviço', async () => {
-            req.params.id = 's1';
-            const mockError = new Error('Erro inesperado');
-            scoreService.deleteScore.mockRejectedValue(mockError);
+        await updateScore(req, res, next);
 
-            await deleteScore(req, res, next);
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
 
-            expect(scoreService.deleteScore).toHaveBeenCalledWith('s1');
-            expect(next).toHaveBeenCalledWith(mockError);
-            expect(success).not.toHaveBeenCalled();
-        });
+// ===================== deleteScore =====================
+describe('ScoreController - deleteScore', () => {
+    it('deve remover a pontuação e responder via helper success com payload null', async () => {
+        const req = mockReq({ params: { id: 's1' } });
+        const res = mockRes();
+        const next = jest.fn();
+
+        scoreService.deleteScore.mockResolvedValue({ _id: 's1' });
+
+        await deleteScore(req, res, next);
+
+        expect(scoreService.deleteScore).toHaveBeenCalledWith('s1');
+        expect(success).toHaveBeenCalledWith(res, null, 'Score removed successfully');
+    });
+
+    it('deve retornar 404 quando a pontuação a ser removida não existir', async () => {
+        const req = mockReq({ params: { id: 'nao-existe' } });
+        const res = mockRes();
+        const next = jest.fn();
+
+        scoreService.deleteScore.mockResolvedValue(null);
+
+        await deleteScore(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Score not found' });
+        expect(success).not.toHaveBeenCalled();
+    });
+
+    it('deve chamar next(error) quando o service lançar um erro', async () => {
+        const req = mockReq({ params: { id: 's1' } });
+        const res = mockRes();
+        const next = jest.fn();
+        const error = new Error('Falha ao remover');
+
+        scoreService.deleteScore.mockRejectedValue(error);
+
+        await deleteScore(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
     });
 });
