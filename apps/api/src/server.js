@@ -3,8 +3,7 @@ import { connectDB } from '#config/db.js';
 import { createApp } from '#app.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { setupGameGateway } from './modules/game/game.gateway.js';
-
+import registerSocket from '../socket/index.js';
 /**
  * Server entry point.
  * Connects to the database, creates the app, and starts listening.
@@ -24,7 +23,7 @@ async function start() {
         });
 
         // Setup gateways
-        setupGameGateway(io);
+        registerSocket(io);
 
         const PORT = env.PORT;
 

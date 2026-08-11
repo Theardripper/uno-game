@@ -55,7 +55,8 @@ export const getRoomByCode = async (code) => {
         name: p.name,
         tag: p.tag,
         avatarSeed: `https://api.dicebear.com/9.x/avataaars/svg?seed=${p.avatar_seed}`,
-        level: p.level
+        level: p.level,
+        ready: room.readyPlayers ? room.readyPlayers.includes(p._id.toString()) : false
     }));
 
     return room;
@@ -125,6 +126,9 @@ export const leaveRoom = async (code, playerId) => {
     }
 
     room.players = room.players.filter(id => id !== playerId);
+    if (room.readyPlayers) {
+        room.readyPlayers = room.readyPlayers.filter(id => id !== playerId);
+    }
     
     if (room.players.length === 0) {
         await room.deleteOne();
@@ -135,6 +139,27 @@ export const leaveRoom = async (code, playerId) => {
         room.hostId = room.players[0];
     }
 
+    await room.save();
+    return await getRoomByCode(code);
+};
+
+export const togglePlayerReady = async (code, playerId) => {
+    const room = await Room.findOne({ code });
+    if (!room) {
+        throw new AppError("Sala não encontrada", 404);
+    }
+
+    if (!room.readyPlayers) {
+        room.readyPlayers = [];
+    }
+
+    const isReady = room.readyPlayers.includes(playerId);
+    if (isReady) {
+        room.readyPlayers = room.readyPlayers.filter(id => id !== playerId);
+    } else {
+        room.readyPlayers.push(playerId);
+    }
+    
     await room.save();
     return await getRoomByCode(code);
 };

@@ -1,23 +1,22 @@
 import { ErrorCodes } from "../../shared/api/responses/errors.js";
 import { GameEvents, SystemEvents } from "../../shared/socket/events.js";
-
-import { getRoom } from "./store/rooms.store.js";
+import { gameEngine } from "../src/modules/game/game.engine.js";
+import { broadcastGameState } from "./game.broadcaster.js";
+import { getRoom, removePlayer } from "./store/rooms.store.js";
 
 /**
  * Registra os handlers de Game para um socket conectado.
  *
  * Esta camada só cuida da comunicação: recebe a ação, valida o
  * básico (player está em uma sala) e responde no ack. As regras
- * do jogo em si (validar carta, turno, penalidades) entram na US
- * do motor do jogo, que vai plugar aqui.
+ * do jogo em si entram na engine.
  *
  * @param {import('socket.io').Server} io
  * @param {import('socket.io').Socket} socket
  */
 export default function registerGameSocket(io, socket) {
-    /**
-     * Garante que o player está em uma sala antes de aceitar a ação.
-     */
+    const player = socket.data.player;
+
     function requireRoom(callback) {
         const room = getRoom(socket.data.roomCode);
 
@@ -32,21 +31,47 @@ export default function registerGameSocket(io, socket) {
         return room;
     }
 
+    function emitError(code, message) {
+        socket.emit(SystemEvents.SERVER_ERROR, { code, message });
+    }
+
+    function checkFinished(game, roomCode) {
+        if (game.status === "finished") {
+            io.to(roomCode).emit(GameEvents.SERVER_GAME_FINISHED, {
+                roomCode,
+                winnerId: game.winnerId,
+                reason: game.endReason,
+            });
+        }
+    }
+
     socket.on(GameEvents.CLIENT_PLAY_CARD, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): validar turno e carta com isPlayableCard,
-        // atualizar o estado e emitir SERVER_GAME_STATE para a sala.
-        callback?.({ success: true, card: payload?.cardId });
+        try {
+            const game = gameEngine.playCard(room.code, player.id, payload?.cardId, payload?.color);
+            broadcastGameState(io, game);
+            checkFinished(game, room.code);
+            callback?.({ success: true, card: payload?.cardId });
+        } catch (error) {
+            emitError(ErrorCodes.INVALID_CARD, error.message);
+            callback?.({ success: false });
+        }
     });
 
     socket.on(GameEvents.CLIENT_DRAW_CARD, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): comprar do deck e emitir SERVER_GAME_STATE.
-        callback?.({ success: true });
+        try {
+            const game = gameEngine.drawCard(room.code, player.id);
+            broadcastGameState(io, game);
+            callback?.({ success: true });
+        } catch (error) {
+            emitError(ErrorCodes.NOT_YOUR_TURN, error.message);
+            callback?.({ success: false });
+        }
     });
 
     socket.on(GameEvents.CLIENT_PASS_TURN, (payload, callback) => {
@@ -61,7 +86,7 @@ export default function registerGameSocket(io, socket) {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): aplicar a cor escolhida no estado.
+        // Color selection is handled in playCard currently.
         callback?.({ success: true, color: payload?.color });
     });
 
