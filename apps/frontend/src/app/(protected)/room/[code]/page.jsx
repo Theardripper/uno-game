@@ -10,7 +10,7 @@ import { socketClient } from "@/socket/socket-client";
 import { useAuth } from "@/store/auth/use-auth";
 import { ArrowLeft, Copy, Play, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useRoom } from "@/store/room/use-room";
 import { GameEvents, LobbyEvents, SystemEvents } from "@shared/socket/events";
@@ -21,12 +21,14 @@ export default function WaitingRoomPage() {
 
   const roomState = useRoom();
   const room = roomState.code ? roomState : null;
-  const setRoom = (roomData) => {
+
+  const setRoomAction = roomState.actions.setRoom;
+  const setRoom = useCallback((roomData) => {
     if (roomData) {
       roomData.id = roomData.id || roomData._id;
-      roomState.actions.setRoom(roomData);
+      setRoomAction(roomData);
     }
-  };
+  }, [setRoomAction]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
@@ -59,8 +61,7 @@ export default function WaitingRoomPage() {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, router, toastError]);
+  }, [code, router, setRoom, toastError]);
 
   // Setup Socket.IO
   useEffect(() => {
@@ -71,10 +72,7 @@ export default function WaitingRoomPage() {
       socketClient.connect(accessToken);
     }
 
-    // Para o MVP: Como não temos um store de player pronto aqui,
-    // vamos pegar o ID do token rudimentarmente (se for JWT padrão)
-    // ou apenas enviar o token no auth e deixar o backend resolver.
-    // Mas no meu gateway eu pedi playerId no payload. Vou extrair do JWT:
+
     let playerId = "unknown";
     try {
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
@@ -115,8 +113,7 @@ export default function WaitingRoomPage() {
       socketClient.off(GameEvents.SERVER_GAME_STARTED, onGameStarted);
       socketClient.off(SystemEvents.SERVER_ERROR, onGameError);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, code, router, toastSuccess]);
+  }, [accessToken, code, router, toastError, toastSuccess]);
 
 
   const copyCode = () => {
