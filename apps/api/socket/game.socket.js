@@ -42,6 +42,9 @@ export default function registerGameSocket(io, socket) {
                 winnerId: game.winnerId,
                 reason: game.endReason,
             });
+            import("../src/modules/room/room.model.js").then(({ default: Room }) => {
+                Room.deleteOne({ code: roomCode }).catch(console.error);
+            });
         }
     }
 

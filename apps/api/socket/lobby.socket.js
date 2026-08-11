@@ -11,6 +11,7 @@ import {
     removePlayer,
     toSnapshot,
 } from "./store/rooms.store.js";
+import Room from "../src/modules/room/room.model.js";
 
 const MIN_PLAYERS = 2;
 
@@ -137,11 +138,15 @@ export default function registerLobbySocket(io, socket) {
                             winnerId: game.winnerId,
                             reason: game.endReason,
                         });
+                        // Limpar do MongoDB se o jogo acabou
+                        Room.deleteOne({ code: room.code }).catch(console.error);
                     } else {
                         broadcastGameState(io, game);
                     }
                 }
             }
+        } else {
+            Room.deleteOne({ code: room.code }).catch(console.error);
         }
 
         callback?.({ success: true });
@@ -173,7 +178,7 @@ export default function registerLobbySocket(io, socket) {
      * cartas e estado do jogo em si são responsabilidade da US do
      * motor do jogo (game.socket).
      */
-    socket.on(LobbyEvents.CLIENT_START_GAME, (payload, callback) => {
+    socket.on(LobbyEvents.CLIENT_START_GAME, async (payload, callback) => {
         const room = getRoom(socket.data.roomCode);
 
         if (!room) {
@@ -201,6 +206,13 @@ export default function registerLobbySocket(io, socket) {
         }
 
         room.status = GameState.STARTING;
+        
+        try {
+            await Room.updateOne({ code: room.code }, { status: 'in_progress' });
+        } catch (error) {
+            console.error("Failed to update MongoDB status:", error);
+        }
+        
         broadcastRoomState(io, room);
 
         try {
