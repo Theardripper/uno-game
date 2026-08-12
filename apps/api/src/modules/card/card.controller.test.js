@@ -39,7 +39,7 @@ beforeEach(() => {
     jest.clearAllMocks();
 });
 
-// ===================== createCard (2 casos) =====================
+// ===================== createCard (4 casos) =====================
 describe('CardController - createCard', () => {
     it('deve criar a carta com os dados do body e responder via helper success (201)', async () => {
         const req = mockReq({ body: { color: 'red', value: '7', type: 'number' } });
@@ -69,9 +69,37 @@ describe('CardController - createCard', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve repassar o body ao service mesmo quando ele vier vazio', async () => {
+        const req = mockReq({ body: {} });
+        const res = mockRes();
+        const next = mockNext();
+
+        cardServiceMock.createCard.mockResolvedValue({ _id: 'c1' });
+
+        await cardController.createCard(req, res, next);
+
+        expect(cardServiceMock.createCard).toHaveBeenCalledWith({});
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ body: { color: 'red' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('DB failure');
+
+        cardServiceMock.createCard.mockRejectedValue(error);
+
+        await cardController.createCard(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
 });
 
-// ===================== getCardById (3 casos) =====================
+// ===================== getCardById (6 casos) =====================
 describe('CardController - getCardById', () => {
     it('deve retornar a carta encontrada pelo id via helper success', async () => {
         const req = mockReq({ params: { id: 'c1' } });
@@ -116,9 +144,52 @@ describe('CardController - getCardById', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve responder 404 quando o service devolver undefined', async () => {
+        const req = mockReq({ params: { id: 'naoexiste' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        cardServiceMock.getCardById.mockResolvedValue(undefined);
+
+        await cardController.getCardById(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Card not found' });
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('deve consultar o service uma única vez quando a carta não existir', async () => {
+        const req = mockReq({ params: { id: 'naoexiste' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        cardServiceMock.getCardById.mockResolvedValue(null);
+
+        await cardController.getCardById(req, res, next);
+
+        expect(cardServiceMock.getCardById).toHaveBeenCalledTimes(1);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('deve chamar next(error) quando o service lançar de forma síncrona', async () => {
+        const req = mockReq({ params: { id: 'c1' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('Unexpected failure');
+
+        cardServiceMock.getCardById.mockImplementation(() => {
+            throw error;
+        });
+
+        await cardController.getCardById(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
 });
 
-// ===================== updateCard (3 casos) =====================
+// ===================== updateCard (5 casos) =====================
 describe('CardController - updateCard', () => {
     it('deve atualizar a carta e responder via helper success', async () => {
         const req = mockReq({ params: { id: 'c1' }, body: { color: 'green' } });
@@ -163,9 +234,38 @@ describe('CardController - updateCard', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve responder 404 quando o service devolver undefined', async () => {
+        const req = mockReq({ params: { id: 'naoexiste' }, body: { color: 'green' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        cardServiceMock.updateCard.mockResolvedValue(undefined);
+
+        await cardController.updateCard(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Card not found' });
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ params: { id: 'c1' }, body: { color: 'green' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('DB failure');
+
+        cardServiceMock.updateCard.mockRejectedValue(error);
+
+        await cardController.updateCard(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
 });
 
-// ===================== deleteCard (3 casos) =====================
+// ===================== deleteCard (6 casos) =====================
 describe('CardController - deleteCard', () => {
     it('deve remover a carta e responder via helper success com payload null', async () => {
         const req = mockReq({ params: { id: 'c1' } });
@@ -209,5 +309,47 @@ describe('CardController - deleteCard', () => {
 
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('deve responder 404 quando o service devolver undefined', async () => {
+        const req = mockReq({ params: { id: 'naoexiste' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        cardServiceMock.deleteCard.mockResolvedValue(undefined);
+
+        await cardController.deleteCard(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Card not found' });
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('deve responder 404 quando o service devolver um valor falsy como false', async () => {
+        const req = mockReq({ params: { id: 'naoexiste' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        cardServiceMock.deleteCard.mockResolvedValue(false);
+
+        await cardController.deleteCard(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ params: { id: 'c1' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('DB failure');
+
+        cardServiceMock.deleteCard.mockRejectedValue(error);
+
+        await cardController.deleteCard(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
     });
 });
