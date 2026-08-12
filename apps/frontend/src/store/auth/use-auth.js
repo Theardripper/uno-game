@@ -13,6 +13,7 @@ export function useAuth() {
             accessToken: state.accessToken,
             refreshToken: state.refreshToken,
             isAuthenticated: state.isAuthenticated,
+            user: state.user,
             actions: state.actions,
         }))
     );

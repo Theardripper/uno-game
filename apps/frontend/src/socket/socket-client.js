@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { useAuthStore } from "@/store/auth/auth.store";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -77,12 +78,9 @@ class SocketClient {
 
         if (this.socket.connected || this.socket.active) return;
 
-        let playerId, name;
-        try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            playerId = payload.id || payload.sub;
-            name = payload.name;
-        } catch (e) {}
+        const user = useAuthStore.getState().user;
+        let playerId = user?.id || user?.sub;
+        let name = user?.name;
 
         this.socket.auth = { token, playerId, name };
 

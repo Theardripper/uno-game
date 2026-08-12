@@ -11,17 +11,11 @@ import { useEffect, useState } from "react";
  */
 export const HUD = () => {
     const { currentTurn } = useGame();
-    const [prevTurn, setPrevTurn] = useState(currentTurn);
     const [timeLeft, setTimeLeft] = useState(GAME_CONSTANTS.TURN_DURATION_SECONDS);
 
-    // Reseta o timer sempre que o turno mudar (atualizando durante o render para evitar efeitos em cascata)
-    if (currentTurn !== prevTurn) {
-        setPrevTurn(currentTurn);
-        setTimeLeft(GAME_CONSTANTS.TURN_DURATION_SECONDS);
-    }
-
-    // Inicia e limpa o intervalo do timer
+    // Inicia e limpa o intervalo do timer, resetando sempre que o turno mudar
     useEffect(() => {
+        setTimeLeft(GAME_CONSTANTS.TURN_DURATION_SECONDS);
         const interval = setInterval(() => {
             setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
         }, 1000);

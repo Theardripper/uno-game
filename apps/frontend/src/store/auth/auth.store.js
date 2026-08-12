@@ -10,10 +10,22 @@ import Cookies from "js-cookie";
 
 const token = typeof window !== "undefined" ? Cookies.get("accessToken") : null;
 
+function parseJwt(token) {
+    if (!token) return null;
+    try {
+        return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+        return null;
+    }
+}
+
+const initialPayload = parseJwt(token);
+
 const initialState = {
     accessToken: token || null,
     refreshToken: null,
     isAuthenticated: !!token,
+    user: initialPayload,
 };
 
 /**
@@ -49,6 +61,7 @@ export const useAuthStore = create((set) => ({
                 ...initialState,
                 ...auth,
                 isAuthenticated: !!auth.accessToken,
+                user: parseJwt(auth.accessToken),
             }));
         },
 
@@ -63,6 +76,9 @@ export const useAuthStore = create((set) => ({
             set((state) => {
                 const newState = { ...state, ...partialAuth };
                 newState.isAuthenticated = !!newState.accessToken;
+                if (partialAuth.accessToken) {
+                    newState.user = parseJwt(partialAuth.accessToken);
+                }
                 return newState;
             });
         },

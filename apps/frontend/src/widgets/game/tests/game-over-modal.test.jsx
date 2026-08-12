@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { GameOverModal } from "./game-over-modal";
-import { useGame } from "../../store/game/use-game";
+import { GameOverModal } from "../game-over-modal";
+import { useGame } from "@/store/game/use-game";
 
 // Mock do Zustand
-vi.mock("../../store/game/use-game", () => ({
+vi.mock("@/store/game/use-game", () => ({
     useGame: vi.fn(),
 }));
 

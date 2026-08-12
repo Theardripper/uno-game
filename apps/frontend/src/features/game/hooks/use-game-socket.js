@@ -2,6 +2,7 @@ import { LobbyEvents } from "@shared/socket/events";
 import { useEffect, useState } from "react";
 import { socketClient } from "@/socket/socket-client";
 import { useGame } from "@/store/game/use-game";
+import { useAuth } from "@/store/auth/use-auth";
 
 /**
  * Hook para gerenciar a entrada na sala via Socket.IO
@@ -14,8 +15,14 @@ export const useGameSocket = (roomCode, playerId) => {
     const { actions: { reset } } = useGame();
     const [isConnecting, setIsConnecting] = useState(true);
 
+    const { accessToken } = useAuth();
+
     useEffect(() => {
-        if (!roomCode || !playerId) return;
+        if (!roomCode || !playerId || !accessToken) return;
+
+        if (!socketClient.isConnected()) {
+            socketClient.connect(accessToken);
+        }
 
         const handleConnect = () => {
             setIsConnecting(false);
@@ -33,7 +40,7 @@ export const useGameSocket = (roomCode, playerId) => {
             socketClient.off("connect", handleConnect);
             reset(); // Reseta o store do jogo ao sair da tela da partida
         };
-    }, [roomCode, playerId, reset]);
+    }, [roomCode, playerId, reset, accessToken]);
 
     return { isConnecting };
 };

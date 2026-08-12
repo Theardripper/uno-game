@@ -1,4 +1,4 @@
-import { getLevel, getLevelProgress, calculateXpEarned, BASE_XP_WIN, BASE_XP_WO, BASE_XP_LOSS } from './progression.js';
+import { getLevel, getLevelProgress, calculateXpEarned, BASE_XP_WIN, BASE_XP_WO, BASE_XP_LOSS } from '../progression.js';
 
 describe('Progression Utilities', () => {
     describe('getLevel', () => {
