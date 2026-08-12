@@ -43,7 +43,7 @@ beforeEach(() => {
     jest.clearAllMocks();
 });
 
-// ===================== createRoom (3 casos) =====================
+// ===================== createRoom (6 casos) =====================
 describe('RoomController - createRoom', () => {
     it('deve criar a sala com o id do usuário e os dados do body e responder via helper success (201)', async () => {
         const req = mockReq({ body: { name: 'Sala do João', maxPlayers: 4, isPrivate: false } });
@@ -86,9 +86,52 @@ describe('RoomController - createRoom', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve chamar next(error) quando a requisição chegar sem usuário autenticado', async () => {
+        const req = { params: {}, body: { name: 'Sala do João' } };
+        const res = mockRes();
+        const next = mockNext();
+
+        await roomController.createRoom(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(roomServiceMock.createRoom).not.toHaveBeenCalled();
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ body: { name: 'Sala do João' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('DB failure');
+
+        roomServiceMock.createRoom.mockRejectedValue(error);
+
+        await roomController.createRoom(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve chamar next(error) quando o service lançar de forma síncrona', async () => {
+        const req = mockReq({ body: { name: 'Sala do João' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('Unexpected failure');
+
+        roomServiceMock.createRoom.mockImplementation(() => {
+            throw error;
+        });
+
+        await roomController.createRoom(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
 });
 
-// ===================== validateRoomCode (3 casos) =====================
+// ===================== validateRoomCode (5 casos) =====================
 describe('RoomController - validateRoomCode', () => {
     it('deve validar o código e responder com { room, canJoin: true } via helper success (200)', async () => {
         const req = mockReq({ params: { code: 'UNO-A1B2' } });
@@ -131,9 +174,38 @@ describe('RoomController - validateRoomCode', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve repassar o erro de sala cheia lançado pelo service sem alterar o conteúdo', async () => {
+        const req = mockReq({ params: { code: 'UNO-A1B2' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('Sala cheia');
+        error.statusCode = 409;
+
+        roomServiceMock.validateRoomCode.mockRejectedValue(error);
+
+        await roomController.validateRoomCode(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+        expect(next.mock.calls[0][0].statusCode).toBe(409);
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ params: { code: 'UNO-XXXX' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        roomServiceMock.validateRoomCode.mockRejectedValue(new Error('Sala não encontrada'));
+
+        await roomController.validateRoomCode(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+    });
 });
 
-// ===================== getRoomByCode (2 casos) =====================
+// ===================== getRoomByCode (4 casos) =====================
 describe('RoomController - getRoomByCode', () => {
     it('deve retornar a sala encontrada via helper success (200)', async () => {
         const req = mockReq({ params: { code: 'UNO-A1B2' } });
@@ -163,9 +235,38 @@ describe('RoomController - getRoomByCode', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve repassar o erro de sala inexistente lançado pelo service sem alterar o conteúdo', async () => {
+        const req = mockReq({ params: { code: 'UNO-XXXX' } });
+        const res = mockRes();
+        const next = mockNext();
+        const error = new Error('Sala não encontrada');
+        error.statusCode = 404;
+
+        roomServiceMock.getRoomByCode.mockRejectedValue(error);
+
+        await roomController.getRoomByCode(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+        expect(next.mock.calls[0][0].statusCode).toBe(404);
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ params: { code: 'UNO-XXXX' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        roomServiceMock.getRoomByCode.mockRejectedValue(new Error('Sala não encontrada'));
+
+        await roomController.getRoomByCode(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
 });
 
-// ===================== joinRoom (3 casos) =====================
+// ===================== joinRoom (5 casos) =====================
 describe('RoomController - joinRoom', () => {
     it('deve associar o jogador à sala e responder via helper success (200)', async () => {
         const req = mockReq({ body: { roomCode: 'UNO-A1B2' } });
@@ -208,9 +309,34 @@ describe('RoomController - joinRoom', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve chamar next(error) quando a requisição chegar sem usuário autenticado', async () => {
+        const req = { params: {}, body: { roomCode: 'UNO-A1B2' } };
+        const res = mockRes();
+        const next = mockNext();
+
+        await roomController.joinRoom(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(roomServiceMock.joinRoom).not.toHaveBeenCalled();
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ body: { roomCode: 'UNO-A1B2' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        roomServiceMock.joinRoom.mockRejectedValue(new Error('Room is full'));
+
+        await roomController.joinRoom(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+    });
 });
 
-// ===================== updateRoom (3 casos) =====================
+// ===================== updateRoom (5 casos) =====================
 describe('RoomController - updateRoom', () => {
     it('deve atualizar a sala e responder via helper success (200)', async () => {
         const req = mockReq({ params: { id: 'r1' }, body: { maxPlayers: 6 } });
@@ -253,9 +379,34 @@ describe('RoomController - updateRoom', () => {
         expect(next).toHaveBeenCalledWith(error);
         expect(responseHelperMock.success).not.toHaveBeenCalled();
     });
+
+    it('deve chamar next(error) quando a requisição chegar sem usuário autenticado', async () => {
+        const req = { params: { id: 'r1' }, body: { maxPlayers: 6 } };
+        const res = mockRes();
+        const next = mockNext();
+
+        await roomController.updateRoom(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(roomServiceMock.updateRoom).not.toHaveBeenCalled();
+        expect(responseHelperMock.success).not.toHaveBeenCalled();
+    });
+
+    it('não deve responder nada pelo res quando o service falhar', async () => {
+        const req = mockReq({ params: { id: 'r1' }, body: { maxPlayers: 6 } });
+        const res = mockRes();
+        const next = mockNext();
+
+        roomServiceMock.updateRoom.mockRejectedValue(new Error('Not allowed'));
+
+        await roomController.updateRoom(req, res, next);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+    });
 });
 
-// ===================== deleteRoom (2 casos) =====================
+// ===================== deleteRoom (4 casos) =====================
 describe('RoomController - deleteRoom', () => {
     it('deve deletar a sala e responder com status 204 e corpo vazio', async () => {
         const req = mockReq({ params: { id: 'r1' } });
@@ -285,5 +436,31 @@ describe('RoomController - deleteRoom', () => {
 
         expect(next).toHaveBeenCalledWith(error);
         expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('deve chamar next(error) quando a requisição chegar sem usuário autenticado', async () => {
+        const req = { params: { id: 'r1' }, body: {} };
+        const res = mockRes();
+        const next = mockNext();
+
+        await roomController.deleteRoom(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(roomServiceMock.deleteRoom).not.toHaveBeenCalled();
+        expect(res.send).not.toHaveBeenCalled();
+    });
+
+    it('não deve enviar corpo algum quando o service falhar', async () => {
+        const req = mockReq({ params: { id: 'r1' } });
+        const res = mockRes();
+        const next = mockNext();
+
+        roomServiceMock.deleteRoom.mockRejectedValue(new Error('Not allowed'));
+
+        await roomController.deleteRoom(req, res, next);
+
+        expect(res.send).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
     });
 });
