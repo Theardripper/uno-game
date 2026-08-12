@@ -40,14 +40,17 @@ describe("GameOverModal", () => {
             winnerId: "1",
             endReason: "NORMAL",
             players: [{ id: "1", name: "Player One", avatarSeed: "seed1" }],
+            matchResults: [{ playerId: "1", score: 185, xpEarned: 118, level: 8, previousLevel: 7, totalXp: 2350 }],
         });
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        expect(screen.getByText("Você Venceu!")).toBeDefined();
-        expect(screen.getByText("Player One")).toBeDefined();
-        expect(screen.getByText("venceu a partida!")).toBeDefined();
-        expect(screen.getByText("O vencedor ficou sem cartas")).toBeDefined();
+        expect(screen.getAllByText("Você Venceu!")[0]).toBeDefined();
+        expect(screen.getAllByText("Player One")[0]).toBeDefined();
+        expect(screen.getAllByText("venceu a partida!")[0]).toBeDefined();
+        expect(screen.getAllByText("185 pts")[0]).toBeDefined();
+        expect(screen.getAllByText("+118 XP")[0]).toBeDefined();
+        expect(screen.getAllByText("✨ LEVEL UP!")[0]).toBeDefined();
 
         expect(confettiMock).toHaveBeenCalledTimes(1);
     });
@@ -59,14 +62,15 @@ describe("GameOverModal", () => {
             status: "finished",
             winnerId: "2",
             endReason: "NORMAL",
-            players: [{ id: "2", name: "Player Two", avatarSeed: "seed2" }],
+            players: [{ id: "2", name: "Player Two", avatarSeed: "seed2" }, { id: "1", name: "Player One" }],
+            matchResults: [{ playerId: "1", score: 96, xpEarned: 49, level: 8, previousLevel: 8, totalXp: 2350 }],
         });
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        expect(screen.getByText("Fim de Jogo")).toBeDefined();
-        expect(screen.getByText("Player Two")).toBeDefined();
-        expect(screen.getByText("foi o grande vencedor!")).toBeDefined();
+        expect(screen.getAllByText("Fim de Jogo")[0]).toBeDefined();
+        expect(screen.getAllByText("Player Two")[0]).toBeDefined();
+        expect(screen.getAllByText("foi o grande vencedor!")[0]).toBeDefined();
 
         expect(confettiMock).not.toHaveBeenCalled();
     });
@@ -81,7 +85,8 @@ describe("GameOverModal", () => {
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        expect(screen.getByText("Vitória por abandono dos adversários (W.O.)")).toBeDefined();
+        expect(screen.getAllByText("Você Venceu!")[0]).toBeDefined();
+        expect(screen.getAllByText("Abandono (W.O.)")[0]).toBeDefined();
     });
 
     it("should call onLeave when 'Voltar ao Lobby' button is clicked", () => {

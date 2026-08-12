@@ -1,8 +1,73 @@
 import { ErrorCodes } from "../../shared/api/responses/errors.js";
 import { GameEvents, SystemEvents } from "../../shared/socket/events.js";
+import { calculateXpEarned, getLevel } from "../../shared/utils/progression.js";
 import { gameEngine } from "../src/modules/game/game.engine.js";
+import Player from "../src/modules/player/player.model.js";
+import Room from "../src/modules/room/room.model.js";
 import { broadcastGameState } from "./game.broadcaster.js";
-import { getRoom, removePlayer } from "./store/rooms.store.js";
+import { getRoom } from "./store/rooms.store.js";
+
+/**
+ * Processa a finalização de um jogo, contabilizando o XP, atualizando DB
+ * e emitindo o evento final para o cliente.
+ */
+export async function processGameFinishedWithRoomCode(io, game, roomCode) {
+    if (game.status !== "finished") return;
+
+    try {
+        const results = [];
+        const allPlayers = [...game.players, ...(game.removedPlayers || [])];
+
+        for (const player of allPlayers) {
+            const score = game.matchScores?.[player.id] || 0;
+
+            let resultType = "LOSS";
+            if (player.id === game.winnerId) {
+                resultType = game.endReason === "PLAYER_LEFT" ? "WO" : "WIN";
+            }
+
+            const xpEarned = calculateXpEarned(score, resultType);
+
+            // Atualiza o banco de dados
+            const dbPlayer = await Player.findById(player.id);
+            if (dbPlayer) {
+                const previousLevel = getLevel(dbPlayer.xp);
+
+                dbPlayer.xp += xpEarned;
+                dbPlayer.stats.gamesPlayed += 1;
+                if (resultType === "WIN" || resultType === "WO") {
+                    dbPlayer.stats.wins += 1;
+                } else {
+                    dbPlayer.stats.losses += 1;
+                }
+                await dbPlayer.save();
+
+                results.push({
+                    playerId: player.id,
+                    name: player.name,
+                    avatarSeed: player.avatarSeed,
+                    score,
+                    xpEarned,
+                    totalXp: dbPlayer.xp,
+                    level: getLevel(dbPlayer.xp),
+                    previousLevel,
+                    isWinner: player.id === game.winnerId,
+                });
+            }
+        }
+
+        io.to(roomCode).emit(GameEvents.SERVER_GAME_FINISHED, {
+            roomCode,
+            winnerId: game.winnerId,
+            reason: game.endReason,
+            results,
+        });
+
+        await Room.deleteOne({ code: roomCode });
+    } catch (error) {
+        console.error("[Game Socket] Error processing game finish:", error);
+    }
+}
 
 /**
  * Registra os handlers de Game para um socket conectado.
@@ -36,16 +101,7 @@ export default function registerGameSocket(io, socket) {
     }
 
     function checkFinished(game, roomCode) {
-        if (game.status === "finished") {
-            io.to(roomCode).emit(GameEvents.SERVER_GAME_FINISHED, {
-                roomCode,
-                winnerId: game.winnerId,
-                reason: game.endReason,
-            });
-            import("../src/modules/room/room.model.js").then(({ default: Room }) => {
-                Room.deleteOne({ code: roomCode }).catch(console.error);
-            });
-        }
+        processGameFinishedWithRoomCode(io, game, roomCode);
     }
 
     socket.on(GameEvents.CLIENT_PLAY_CARD, (payload, callback) => {

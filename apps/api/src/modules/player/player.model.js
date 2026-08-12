@@ -63,11 +63,12 @@ const playerSchema = new mongoose.Schema(
             default: "",
             maxlength: 120,
         },
-        level: {
-            type: Number,
-            default: 1,
+        stats: {
+            wins: { type: Number, default: 0 },
+            losses: { type: Number, default: 0 },
+            gamesPlayed: { type: Number, default: 0 },
         },
-        current_xp: {
+        xp: {
             type: Number,
             default: 0,
         },
@@ -114,7 +115,21 @@ playerSchema.methods.comparePassword = async function (enteredPassword) {
  * @returns {object}
  */
 playerSchema.methods.toPublicJSON = function () {
-    const xpNextLevel = this.level * 1000; // Simples lógica de progressão
+    // Import dynamically or calculate here? Actually, the progression util is in shared.
+    // However, Mongoose models don't easily do dynamic ESM imports if not async.
+    // It's better to just calculate level using the same logic or import the util.
+    const getLevelProgress = (totalXp) => {
+        const level = totalXp <= 0 ? 1 : Math.floor(Math.sqrt(totalXp / 100)) + 1;
+        const levelStartTotalXp = 100 * Math.pow(level - 1, 2);
+        const nextLevelTotalXp = 100 * Math.pow(level, 2);
+        const currentLevelXp = totalXp - levelStartTotalXp;
+        const levelSize = nextLevelTotalXp - levelStartTotalXp;
+        const xpToNextLevel = nextLevelTotalXp - totalXp;
+        const progressPercentage = Math.floor((currentLevelXp / levelSize) * 100);
+        return { level, totalXp, currentLevelXp, nextLevelXp: nextLevelTotalXp, xpToNextLevel, progressPercentage };
+    };
+
+    const progress = getLevelProgress(this.xp);
 
     return {
         id: this._id.toString(),
@@ -125,9 +140,13 @@ playerSchema.methods.toPublicJSON = function () {
         avatarUrl: `https://api.dicebear.com/9.x/avataaars/svg?seed=${this.avatar_seed}`,
         coverId: this.cover_id,
         bio: this.bio,
-        level: this.level,
-        currentXp: this.current_xp,
-        xpNextLevel: xpNextLevel,
+        level: progress.level,
+        xp: this.xp,
+        currentLevelXp: progress.currentLevelXp,
+        nextLevelXp: progress.nextLevelXp,
+        xpToNextLevel: progress.xpToNextLevel,
+        progressPercentage: progress.progressPercentage,
+        stats: this.stats,
         isGuest: this.is_guest,
         isBot: this.is_bot,
     };
