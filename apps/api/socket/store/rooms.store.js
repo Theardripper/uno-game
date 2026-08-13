@@ -66,6 +66,8 @@ export function addPlayer(room, player) {
     room.players.push({
         id: player.id,
         name: player.name,
+        avatarSeed: player.avatarSeed,
+        level: player.level,
         socketId: player.socketId,
         isReady: false,
         isHost: player.id === room.hostId,
@@ -110,6 +112,8 @@ export function toSnapshot(room) {
         players: room.players.map((player) => ({
             id: player.id,
             name: player.name,
+            avatarSeed: player.avatarSeed,
+            level: player.level,
             isReady: player.isReady,
             isHost: player.isHost,
             connected: player.connected,
