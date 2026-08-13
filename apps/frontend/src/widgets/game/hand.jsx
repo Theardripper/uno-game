@@ -1,5 +1,5 @@
 import { UnoCard } from "@/components/ui/uno-card";
-import { useGameActions } from "@/hooks/game/use-game-actions";
+import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGame } from "@/store/game/use-game";
 import { AnimatePresence, motion } from "framer-motion";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCardImage } from './get-card-image';
+import { getCardImage } from '../get-card-image';
 
 describe('getCardImage', () => {
     it('should return correct path for number cards', () => {

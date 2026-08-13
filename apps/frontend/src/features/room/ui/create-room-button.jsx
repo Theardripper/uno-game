@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAppToast } from "@/hooks/use-app-toast";
 import { roomService } from "@/services/room.service";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useAppToast } from "../../hooks/use-app-toast";
 
 export function CreateRoomButton() {
   const [isLoading, setIsLoading] = useState(false);
