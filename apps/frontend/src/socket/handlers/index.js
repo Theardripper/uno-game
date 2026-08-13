@@ -1,5 +1,5 @@
 //import { registerChatHandlers } from "./chat";
-//import { registerGameHandlers } from "./game";
+import { registerGameHandlers } from "./game";
 import { registerLobbyHandlers } from "./lobby";
 //import { registerSystemHandlers } from "./system";
 
@@ -18,6 +18,7 @@ export function registerSocketHandlers() {
 
     const cleanups = [
         registerLobbyHandlers(),
+        registerGameHandlers(),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());

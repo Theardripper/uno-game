@@ -5,7 +5,6 @@ import { APP_CONFIG } from "@/config/api.config";
 import { afterResponse } from "./hooks/after-response";
 import { beforeRequest } from "./hooks/before-request";
 
-
 /**
  * Cliente Ky configurado com:
  *
@@ -14,8 +13,7 @@ import { beforeRequest } from "./hooks/before-request";
  * - retry = 0 (será tratado via socket)
  */
 export const api = ky.create({
-
-    prefix: APP_CONFIG.apiURL,
+    prefix: `${APP_CONFIG.apiURL}/api`,
     timeout: APP_CONFIG.requestTimeout,
     retry: APP_CONFIG.http.retry,
 

@@ -1,7 +1,6 @@
-import * as React from "react"
-import { Input as InputPrimitive } from "@base-ui/react/input"
+import { Input as InputPrimitive } from "@base-ui/react/input";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/helpers/cn";
 
 function Input({
   className,
@@ -13,11 +12,11 @@ function Input({
       type={type}
       data-slot="input"
       className={cn(
-        "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        "flex h-14 w-full min-w-0 rounded-xl border border-white/5 bg-auth-input px-3 py-2 text-sm text-white shadow-inner transition-all duration-300 outline-none file:inline-flex file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 hover:border-white/10 focus-visible:border-auth-accent focus-visible:ring-2 focus-visible:ring-auth-accent/50 focus-visible:shadow-[0_0_15px_rgba(255,255,255,0.05)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       {...props} />
   );
 }
 
-export { Input }
+export { Input };

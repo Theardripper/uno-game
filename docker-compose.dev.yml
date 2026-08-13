@@ -1,0 +1,44 @@
+services:
+    frontend:
+        build:
+            # Target the builder stage which has pnpm and the workspace setup
+            target: builder
+        # Override production command with dev command
+        command: pnpm run dev --filter=frontend
+        environment:
+            - NODE_ENV=development
+        volumes:
+            # Mount only source directories to preserve the container's node_modules
+            - ./apps/frontend/src:/app/apps/frontend/src
+            - ./apps/frontend/public:/app/apps/frontend/public
+            - ./apps/frontend/next.config.mjs:/app/apps/frontend/next.config.mjs
+            - ./apps/shared:/app/apps/shared
+
+    api:
+        build:
+            target: builder
+        command: pnpm run dev
+        environment:
+            - NODE_ENV=development
+        volumes:
+            # Exclude node_modules from being overwritten by host by explicitly mapping src subfolders if necessary
+            # but since node_modules is inside apps/api/src, we mount specific folders to be safe
+            - ./apps/api/src/config:/app/apps/api/src/config
+            - ./apps/api/src/controllers:/app/apps/api/src/controllers
+            - ./apps/api/src/models:/app/apps/api/src/models
+            - ./apps/api/src/routes:/app/apps/api/src/routes
+            - ./apps/api/src/app.js:/app/apps/api/src/app.js
+            - ./apps/api/src/server.js:/app/apps/api/src/server.js
+            - ./apps/shared:/app/apps/shared
+
+    mock-api:
+        build:
+            target: builder
+        command: node index.js
+        environment:
+            - NODE_ENV=development
+        volumes:
+            # The mock api doesn't have node_modules inside its folder in the host (it relies on root),
+            # so we can safely mount the whole folder.
+            - ./apps/[mock] api:/app/apps/[mock] api
+            - ./apps/shared:/app/apps/shared

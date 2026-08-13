@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
+import { useAuthStore } from "@/store/auth/auth.store";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 /**
  * Singleton responsável por encapsular toda a comunicação com o Socket.IO.
@@ -77,7 +78,11 @@ class SocketClient {
 
         if (this.socket.connected || this.socket.active) return;
 
-        this.socket.auth = { token };
+        const user = useAuthStore.getState().user;
+        let playerId = user?.id || user?.sub;
+        let name = user?.name;
+
+        this.socket.auth = { token, playerId, name };
 
         this.socket.connect();
     }

@@ -1,6 +1,7 @@
 {
     "name": "uno-game",
     "private": true,
+    "type": "module",
     "scripts": {
         "build": "turbo run build",
         "dev": "turbo run dev",
@@ -10,5 +11,8 @@
     "devDependencies": {
         "turbo": "^2.4.4"
     },
-    "packageManager": "pnpm@11.3.0"
+    "packageManager": "pnpm@11.3.0",
+    "dependencies": {
+        "zod": "^4.4.3"
+    }
 }
