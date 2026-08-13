@@ -41,6 +41,7 @@ const initialState = {
     status: "waiting",
     winnerId: null,
     endReason: null,
+    matchResults: null,
 };
 
 export const useGameStore = create(

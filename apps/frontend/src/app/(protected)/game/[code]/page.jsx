@@ -5,11 +5,13 @@ import { useGameSocket } from "@/hooks/game/use-game-socket";
 import { socketClient } from "@/socket/socket-client";
 import { useAuth } from "@/store/auth/use-auth";
 import { useGame } from "@/store/game/use-game";
+import { useGameStore } from "@/store/game/game.store";
 import { LobbyEvents } from "@shared/socket/events";
 import { GameBoard } from "@/widgets/game/game-board";
 import { Hand } from "@/widgets/game/hand";
 import { HUD } from "@/widgets/game/hud";
 import { PlayerSlot } from "@/widgets/game/player-slot";
+import { GameOverModal } from "@/widgets/game/game-over-modal";
 import { Settings } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +24,7 @@ export default function GamePage() {
     const { players, status, winnerId } = useGame();
     const [showSettings, setShowSettings] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
+    
     // 1. Extrair playerId do token de forma derivada
     const myPlayerId = useMemo(() => {
         if (!accessToken) return null;
@@ -40,23 +43,17 @@ export default function GamePage() {
         }
     }, [accessToken, router]);
 
-    // Tratar fim de jogo (Vitória ou Abandono)
-    useEffect(() => {
-        if (status === "finished") {
-            const winner = players.find(p => p.id === winnerId);
-            window.alert(`A partida foi encerrada! ${winner ? `Vencedor: ${winner.name}` : ''}`);
-            router.push("/lobby");
-        }
-    }, [status, winnerId, players, router]);
-
     const handleLeaveGame = () => {
         if (isLeaving) return;
         setIsLeaving(true);
         socketClient.emit(LobbyEvents.CLIENT_LEAVE_ROOM, { roomCode: code }, () => {
+            useGameStore.getState().actions.reset();
             router.push("/lobby");
         });
 
+        // Fallback for timeout
         setTimeout(() => {
+            useGameStore.getState().actions.reset();
             router.push("/lobby");
         }, 1000);
     };
@@ -119,6 +116,13 @@ export default function GamePage() {
                 </div>
             </div>
 
+            {/* GameOver Modal Overlay */}
+            <GameOverModal 
+                localPlayerId={myPlayerId} 
+                onLeave={handleLeaveGame}
+                isLeaving={isLeaving}
+            />
+
             {/* Settings Button */}
             <div className="absolute top-6 right-6 z-100 pointer-events-auto">
                 <Button variant="outline" size="icon" className="bg-white/90 backdrop-blur-md text-slate-800 border-slate-200 hover:bg-white shadow-lg rounded-full w-12 h-12" onClick={() => setShowSettings(true)}>
@@ -152,5 +156,5 @@ export default function GamePage() {
                 </div>
             )}
         </div>
-        );
+    );
 }

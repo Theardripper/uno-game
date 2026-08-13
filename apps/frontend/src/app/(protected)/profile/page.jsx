@@ -40,7 +40,7 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold mb-6 text-card-foreground">Meu Perfil</h1>
       
       {/* Exibição do Avatar Atual */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-6">
         {user?.avatarUrl ? (
           <img 
             src={user.avatarUrl} 
@@ -53,6 +53,49 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Exibição de Nível e XP */}
+      {user && (
+        <div className="mb-8 p-5 bg-slate-50 border rounded-2xl shadow-sm text-center">
+          <div className="font-bold text-lg text-slate-800 mb-1">
+            Nível {user.level || 1}
+          </div>
+          
+          <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden mb-2">
+            <div 
+                className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" 
+                style={{ width: `${user.progressPercentage || 0}%` }}
+            />
+          </div>
+          
+          <div className="flex justify-between text-xs text-slate-500 font-medium px-1 mb-2">
+            <span>{user.currentLevelXp || 0} / {user.levelSize || 0} XP</span>
+            <span>Faltam {user.xpToNextLevel || 0} XP</span>
+          </div>
+
+          <div className="text-sm font-bold text-slate-600 bg-white inline-block px-3 py-1 rounded-full border shadow-sm">
+            Total: {user.xp || 0} XP
+          </div>
+
+          {/* Stats */}
+          {user.stats && (
+            <div className="mt-6 grid grid-cols-3 gap-2 border-t pt-4">
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-black text-slate-700">{user.stats.gamesPlayed}</span>
+                <span className="text-xs uppercase text-slate-500 tracking-wider">Partidas</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-black text-green-600">{user.stats.wins}</span>
+                <span className="text-xs uppercase text-slate-500 tracking-wider">Vitórias</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-black text-red-500">{user.stats.losses}</span>
+                <span className="text-xs uppercase text-slate-500 tracking-wider">Derrotas</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <EditProfileForm defaultValues={user} />
     </FadeIn>
