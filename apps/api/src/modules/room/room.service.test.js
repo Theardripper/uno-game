@@ -134,6 +134,7 @@ describe('RoomService - getRoomByCode', () => {
             tag: '1234',
             avatarSeed: 'https://api.dicebear.com/9.x/avataaars/svg?seed=abc',
             level: 3,
+            ready: false,
         });
     });
 
