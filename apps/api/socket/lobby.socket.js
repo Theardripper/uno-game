@@ -2,6 +2,7 @@ import { ErrorCodes } from "../../shared/api/responses/errors.js";
 import { GameState } from "../../shared/game/game-states.js";
 import { GameEvents, LobbyEvents, SystemEvents } from "../../shared/socket/events.js";
 import { gameEngine } from "../src/modules/game/game.engine.js";
+import { processGameFinishedWithRoomCode } from "./game.socket.js";
 import { broadcastGameState } from "./game.broadcaster.js";
 import {
     addPlayer,
@@ -133,13 +134,7 @@ export default function registerLobbySocket(io, socket) {
                 const game = gameEngine.removePlayer(room.code, player.id, "PLAYER_LEFT");
                 if (game) {
                     if (game.status === "finished") {
-                        io.to(room.code).emit(GameEvents.SERVER_GAME_FINISHED, {
-                            roomCode: game.roomCode,
-                            winnerId: game.winnerId,
-                            reason: game.endReason,
-                        });
-                        // Limpar do MongoDB se o jogo acabou
-                        Room.deleteOne({ code: room.code }).catch(console.error);
+                        processGameFinishedWithRoomCode(io, game, room.code);
                     } else {
                         broadcastGameState(io, game);
                     }

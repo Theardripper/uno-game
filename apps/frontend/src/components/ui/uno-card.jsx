@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { getCardImage } from "@/helpers/get-card-image";
 
 /**
  * Componente visual que representa uma carta de UNO.
@@ -19,37 +20,7 @@ export const UnoCard = ({ color, type, value, isBack = false, style, className =
     // O backend usa 'value' para tudo. Se 'type' não vier, assumimos que é igual a 'value'
     const actualType = type || value;
 
-    const getCardImage = () => {
-        if (isBack) {
-            return "/cards/back.png";
-        }
-
-        const capitalizedColor = color ? color.charAt(0).toUpperCase() + color.slice(1).toLowerCase() : "";
-
-        if (actualType === "wild") {
-            return "/cards/Wild-1.png";
-        }
-        if (actualType === "draw4" || actualType === "+4" || actualType === "wild_draw_four") {
-            return "/cards/Draw4- 1.png";
-        }
-        if (actualType === "draw2" || actualType === "+2" || actualType === "draw_two") {
-            return `/cards/${capitalizedColor} Draw2- 1.png`;
-        }
-        if (actualType === "skip") {
-            return `/cards/${capitalizedColor} Skip- 1.png`;
-        }
-        if (actualType === "reverse") {
-            return `/cards/${capitalizedColor} Reverse- 1.png`;
-        }
-        if (actualType === "number" || (value !== undefined && !["wild", "draw_two", "wild_draw_four", "skip", "reverse"].includes(actualType))) {
-            return `/cards/${capitalizedColor}- ${value}.png`;
-        }
-
-        // Fallback genérico se nada combinar
-        return "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-    };
-
-    const cardImage = getCardImage();
+    const cardImage = isBack ? "/cards/back.png" : getCardImage({ color, value: actualType });
 
     // Uma representação de fallback se a imagem falhar ao carregar
     const bgColor = {

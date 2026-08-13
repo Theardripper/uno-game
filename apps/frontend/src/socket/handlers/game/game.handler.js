@@ -42,7 +42,8 @@ export function registerGameHandlers() {
         useGameStore.getState().actions.patchGame({
             status: "finished",
             winnerId: data.winnerId,
-            endReason: data.reason
+            endReason: data.reason,
+            matchResults: data.results
         });
     };
 

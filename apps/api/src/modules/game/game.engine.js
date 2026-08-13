@@ -57,6 +57,7 @@ class GameEngine {
             currentColor: topCard.color,
             currentTurn: players[0].id,
             turnIndex: 0,
+            removedPlayers: [],
         };
 
         this.activeGames.set(roomCode, gameState);
@@ -79,6 +80,38 @@ class GameEngine {
             }
         }
         return nextIndex;
+    }
+
+    /**
+     * Calcula a pontuação final da partida e salva em game.matchScores.
+     * Vencedor = Soma dos pontos das cartas dos oponentes.
+     * Perdedores = Soma de suas próprias cartas.
+     * W.O. = 0 pontos adicionais para o vencedor, base XP cuidará do ganho.
+     */
+    _calculateMatchScores(game) {
+        if (game.status !== "finished") return;
+
+        game.matchScores = {};
+        let winnerScore = 0;
+        
+        const allPlayers = [...game.players, ...(game.removedPlayers || [])];
+
+        for (const p of allPlayers) {
+            let pScore = 0;
+            // Soma o valor das cartas na mão do jogador
+            for (const card of p.hand) {
+                pScore += (card.score || 0);
+            }
+            
+            if (p.id !== game.winnerId) {
+                game.matchScores[p.id] = pScore; // Perdedor fica com o valor de sua mão
+                winnerScore += pScore;
+            }
+        }
+
+        if (game.winnerId) {
+            game.matchScores[game.winnerId] = winnerScore;
+        }
     }
 
     /**
@@ -204,6 +237,7 @@ class GameEngine {
             game.status = "finished";
             game.winnerId = player.id;
             game.endReason = "NORMAL";
+            this._calculateMatchScores(game);
         }
 
         return game;
@@ -249,13 +283,16 @@ class GameEngine {
         if (playerIndex === -1) return null;
 
         // Remove o jogador
-        game.players.splice(playerIndex, 1);
+        const [removedPlayer] = game.players.splice(playerIndex, 1);
+        game.removedPlayers = game.removedPlayers || [];
+        game.removedPlayers.push(removedPlayer);
 
         if (game.players.length <= 1) {
             // Vitória por abandono
             game.status = "finished";
             game.winnerId = game.players.length === 1 ? game.players[0].id : null;
             game.endReason = reason;
+            this._calculateMatchScores(game);
         } else {
             // Ajusta o turno se a partida continuar
             if (game.currentTurn === playerId) {
