@@ -1,7 +1,8 @@
 import { ErrorCodes } from "../../shared/api/responses/errors.js";
 import { GameState } from "../../shared/game/game-states.js";
-import { LobbyEvents, SystemEvents } from "../../shared/socket/events.js";
-
+import { GameEvents, LobbyEvents, SystemEvents } from "../../shared/socket/events.js";
+import { gameEngine } from "../src/modules/game/game.engine.js";
+import { broadcastGameState } from "./game.broadcaster.js";
 import {
     addPlayer,
     createRoom,
@@ -10,6 +11,7 @@ import {
     removePlayer,
     toSnapshot,
 } from "./store/rooms.store.js";
+import Room from "../src/modules/room/room.model.js";
 
 const MIN_PLAYERS = 2;
 
@@ -86,8 +88,22 @@ export default function registerLobbySocket(io, socket) {
         // Guarda a sala atual no socket para leave/disconnect/chat
         socket.data.roomCode = roomCode;
         socket.join(roomCode);
+        socket.join(`player_${player.id}`);
 
         broadcastRoomState(io, room);
+
+        if (room.status !== GameState.WAITING_FOR_PLAYERS) {
+            const game = gameEngine.getGame(room.code);
+            if (game) {
+                const publicState = gameEngine.getPublicGameState(game);
+                socket.emit(GameEvents.SERVER_GAME_STATE, publicState);
+                
+                const gamePlayer = game.players.find((p) => p.id === player.id);
+                if (gamePlayer) {
+                    socket.emit(GameEvents.SERVER_HAND_UPDATED, { hand: gamePlayer.hand });
+                }
+            }
+        }
 
         callback?.({ success: true, room: toSnapshot(room) });
     });
@@ -112,6 +128,25 @@ export default function registerLobbySocket(io, socket) {
             });
 
             broadcastRoomState(io, room);
+
+            if (room.status !== GameState.WAITING_FOR_PLAYERS) {
+                const game = gameEngine.removePlayer(room.code, player.id, "PLAYER_LEFT");
+                if (game) {
+                    if (game.status === "finished") {
+                        io.to(room.code).emit(GameEvents.SERVER_GAME_FINISHED, {
+                            roomCode: game.roomCode,
+                            winnerId: game.winnerId,
+                            reason: game.endReason,
+                        });
+                        // Limpar do MongoDB se o jogo acabou
+                        Room.deleteOne({ code: room.code }).catch(console.error);
+                    } else {
+                        broadcastGameState(io, game);
+                    }
+                }
+            }
+        } else {
+            Room.deleteOne({ code: room.code }).catch(console.error);
         }
 
         callback?.({ success: true });
@@ -143,7 +178,7 @@ export default function registerLobbySocket(io, socket) {
      * cartas e estado do jogo em si são responsabilidade da US do
      * motor do jogo (game.socket).
      */
-    socket.on(LobbyEvents.CLIENT_START_GAME, (payload, callback) => {
+    socket.on(LobbyEvents.CLIENT_START_GAME, async (payload, callback) => {
         const room = getRoom(socket.data.roomCode);
 
         if (!room) {
@@ -171,15 +206,26 @@ export default function registerLobbySocket(io, socket) {
         }
 
         room.status = GameState.STARTING;
-
+        
+        try {
+            await Room.updateOne({ code: room.code }, { status: 'in_progress' });
+        } catch (error) {
+            console.error("Failed to update MongoDB status:", error);
+        }
+        
         broadcastRoomState(io, room);
 
-        io.to(room.code).emit(SystemEvents.SERVER_NOTIFICATION, {
-            type: "info",
-            message: "a partida vai começar",
-        });
-
-        callback?.({ success: true });
+        try {
+            const game = gameEngine.initializeGame(room.code, room.players);
+            
+            io.to(room.code).emit(GameEvents.SERVER_GAME_STARTED, { roomCode: room.code });
+            broadcastGameState(io, game);
+            
+            callback?.({ success: true });
+        } catch (error) {
+            emitError(socket, ErrorCodes.INTERNAL_SERVER_ERROR, error.message);
+            callback?.({ success: false });
+        }
     });
 
     /**

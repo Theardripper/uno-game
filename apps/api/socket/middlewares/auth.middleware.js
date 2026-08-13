@@ -15,7 +15,9 @@ import { ErrorCodes } from "../../../shared/api/responses/errors.js";
  * @param {import('socket.io').Socket} socket
  * @param {Function} next
  */
-export function authMiddleware(socket, next) {
+import Player from "#modules/player/player.model.js";
+
+export async function authMiddleware(socket, next) {
     const { token, playerId, name } = socket.handshake.auth || {};
 
     if (!token) {
@@ -24,14 +26,30 @@ export function authMiddleware(socket, next) {
         return next(error);
     }
 
+    let realName = name;
+    let realAvatarSeed = undefined;
+    let realLevel = 1;
+    if (playerId) {
+        try {
+            const playerDoc = await Player.findById(playerId);
+            if (playerDoc) {
+                realName = playerDoc.name;
+                realAvatarSeed = playerDoc.avatar_seed;
+                realLevel = playerDoc.level;
+            }
+        } catch (err) {
+            console.error("Socket Auth Error:", err);
+        }
+    }
+
     /**
      * Identidade do player usada por todos os handlers.
-     *
-     * TODO(auth): extrair id e nome do JWT quando a validação real existir.
      */
     socket.data.player = {
         id: playerId || socket.id,
-        name: name || `Player-${socket.id.slice(0, 5)}`,
+        name: realName || `Player-${socket.id.slice(0, 5)}`,
+        avatarSeed: realAvatarSeed ? `https://api.dicebear.com/9.x/avataaars/svg?seed=${realAvatarSeed}` : undefined,
+        level: realLevel,
     };
 
     return next();

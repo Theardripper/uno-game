@@ -12,7 +12,8 @@ const roomSchema = new mongoose.Schema(
       enum: ['waiting', 'in_progress', 'finished'],
       default: 'waiting'
     },
-    players: [{ type: String }] // IDs dos jogadores na sala
+    players: [{ type: String }], // IDs dos jogadores na sala
+    readyPlayers: { type: [String], default: [] } // IDs dos jogadores que estão prontos
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );

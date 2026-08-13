@@ -77,7 +77,14 @@ class SocketClient {
 
         if (this.socket.connected || this.socket.active) return;
 
-        this.socket.auth = { token };
+        let playerId, name;
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            playerId = payload.id || payload.sub;
+            name = payload.name;
+        } catch (e) {}
+
+        this.socket.auth = { token, playerId, name };
 
         this.socket.connect();
     }

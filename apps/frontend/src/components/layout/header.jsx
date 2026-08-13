@@ -1,29 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Menu } from "lucide-react";
-import Cookies from "js-cookie";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetTrigger,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
-import { useAuthStore } from "@/store/auth/auth.store";
 import { socketClient } from "@/socket/socket-client";
+import { useAuthStore } from "@/store/auth/auth.store";
+import { useQueryClient } from "@tanstack/react-query";
+import Cookies from "js-cookie";
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.actions.logout);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -35,8 +37,13 @@ export function Header() {
     router.push("/sign-in");
   };
 
+  // Esconder o header na página do jogo (deve estar DEPOIS de todos os hooks)
+  if (pathname?.startsWith("/game")) {
+    return null;
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto px-4 md:px-8 flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center space-x-2">

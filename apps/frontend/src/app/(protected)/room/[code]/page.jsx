@@ -10,23 +10,25 @@ import { socketClient } from "@/socket/socket-client";
 import { useAuth } from "@/store/auth/use-auth";
 import { ArrowLeft, Copy, Play, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useRoom } from "@/store/room/use-room";
-
+import { GameEvents, LobbyEvents, SystemEvents } from "@shared/socket/events";
 export default function WaitingRoomPage() {
   const { code } = useParams();
   const router = useRouter();
   const { error: toastError, success: toastSuccess } = useAppToast();
-  
+
   const roomState = useRoom();
   const room = roomState.code ? roomState : null;
-  const setRoom = (roomData) => {
+
+  const setRoomAction = roomState.actions.setRoom;
+  const setRoom = useCallback((roomData) => {
     if (roomData) {
       roomData.id = roomData.id || roomData._id;
-      roomState.actions.setRoom(roomData);
+      setRoomAction(roomData);
     }
-  };
+  }, [setRoomAction]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
@@ -59,7 +61,7 @@ export default function WaitingRoomPage() {
     return () => {
       mounted = false;
     };
-  }, [code, router, toastError]);
+  }, [code, router, setRoom, toastError]);
 
   // Setup Socket.IO
   useEffect(() => {
@@ -70,10 +72,7 @@ export default function WaitingRoomPage() {
       socketClient.connect(accessToken);
     }
 
-    // Para o MVP: Como não temos um store de player pronto aqui,
-    // vamos pegar o ID do token rudimentarmente (se for JWT padrão)
-    // ou apenas enviar o token no auth e deixar o backend resolver.
-    // Mas no meu gateway eu pedi playerId no payload. Vou extrair do JWT:
+
     let playerId = "unknown";
     try {
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
@@ -86,40 +85,35 @@ export default function WaitingRoomPage() {
         userId: playerId,
         roomId: code
       });
-      socketClient.emit("room:join", { roomCode: code, playerId });
+      socketClient.emit(LobbyEvents.CLIENT_JOIN_ROOM, { roomCode: code, playerId });
     };
 
     if (socketClient.isConnected()) {
       handleConnect();
     }
-    
+
     // SEMPRE escuta o evento connect para lidar com reconexões
     socketClient.on("connect", handleConnect);
-
-    const onStateUpdated = (updatedRoom) => {
-      console.log('[ROOM STATE RECEIVED]', {
-        roomId: updatedRoom.code,
-        players: updatedRoom.players,
-        playerCount: updatedRoom.players?.length,
-        playerDetailsCount: updatedRoom.playerDetails?.length
-      });
-      setRoom(updatedRoom);
-    };
 
     const onGameStarted = () => {
       toastSuccess("Redirecionando para o tabuleiro...", "Partida Iniciada!");
       router.push(`/game/${code}`);
     };
 
-    socketClient.on("room:state-updated", onStateUpdated);
-    socketClient.on("game:started", onGameStarted);
+    const onGameError = (error) => {
+      toastError(error.message || "Erro ao iniciar partida", "Atenção");
+      setIsStarting(false);
+    };
+
+    socketClient.on(GameEvents.SERVER_GAME_STARTED, onGameStarted);
+    socketClient.on(SystemEvents.SERVER_ERROR, onGameError);
 
     return () => {
       socketClient.off("connect", handleConnect);
-      socketClient.off("room:state-updated", onStateUpdated);
-      socketClient.off("game:started", onGameStarted);
+      socketClient.off(GameEvents.SERVER_GAME_STARTED, onGameStarted);
+      socketClient.off(SystemEvents.SERVER_ERROR, onGameError);
     };
-  }, [accessToken, code, router, toastSuccess]);
+  }, [accessToken, code, router, toastError, toastSuccess]);
 
 
   const copyCode = () => {
@@ -143,15 +137,21 @@ export default function WaitingRoomPage() {
 
   const isHost = room.hostId === currentUserId;
   const canStart = room.playerDetails?.length >= 2;
+  const allPlayersReady = room.playerDetails?.every(p => p.ready) ?? false;
+  const currentPlayer = room.playerDetails?.find(p => p.id === currentUserId);
+  const isReady = currentPlayer?.ready ?? false;
+
+  const handleToggleReady = () => {
+    socketClient.emit(LobbyEvents.CLIENT_TOGGLE_READY, { roomCode: code });  };
 
   const handleStartGame = () => {
     if (isStarting) return;
     setIsStarting(true);
-    socketClient.emit("game:start", { roomCode: code });
+    socketClient.emit(LobbyEvents.CLIENT_START_GAME, { roomCode: code });
   };
 
   const handleLeaveRoom = () => {
-    socketClient.emit("room:leave", { roomCode: code, playerId: currentUserId }, () => {
+    socketClient.emit(LobbyEvents.CLIENT_LEAVE_ROOM, { roomCode: code, playerId: currentUserId }, () => {
       router.push("/lobby");
     });
     // Fallback in case callback never fires
@@ -204,6 +204,11 @@ export default function WaitingRoomPage() {
                       {player.id === room.hostId && (
                         <Badge variant="default" className="text-[10px] h-4 px-1.5 uppercase">Host</Badge>
                       )}
+                      {player.ready ? (
+                        <Badge variant="success" className="bg-green-500 text-white hover:bg-green-600 border-green-500 text-[10px] h-4 px-1.5 uppercase ml-auto">✓ Pronto</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground border-dashed text-[10px] h-4 px-1.5 uppercase ml-auto">○ Não pronto</Badge>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">Nível {player.level}</p>
                   </div>
@@ -223,14 +228,18 @@ export default function WaitingRoomPage() {
               ))}
             </div>
 
-            <div className="pt-6 flex justify-center">
+            <div className="pt-6 flex flex-col items-center gap-4">
+              <Button size="lg" variant={isReady ? "outline" : "default"} onClick={handleToggleReady} className="w-full max-w-sm h-12">
+                {isReady ? "Cancelar Pronto" : "Pronto"}
+              </Button>
+
               {isHost ? (
-                <Button size="lg" className="w-full max-w-sm h-14 text-lg" disabled={!canStart || isStarting} onClick={handleStartGame}>
+                <Button size="lg" className="w-full max-w-sm h-14 text-lg" disabled={!canStart || !allPlayersReady || isStarting} onClick={handleStartGame}>
                   <Play className="mr-2 h-6 w-6" />
-                  {isStarting ? "Iniciando..." : "Iniciar Partida"}
+                  {isStarting ? "Iniciando..." : (allPlayersReady ? "Iniciar Partida" : "Aguardando jogadores...")}
                 </Button>
               ) : (
-                <div className="text-center p-4 rounded-lg bg-muted/50 border border-muted w-full animate-pulse">
+                <div className="text-center p-4 rounded-lg bg-muted/50 border border-muted w-full max-w-sm animate-pulse">
                   <p className="text-sm font-medium text-muted-foreground">Aguardando o host iniciar a partida...</p>
                 </div>
               )}

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreateRoomButton } from "@/features/room/CreateRoomButton";
-import { JoinRoomForm } from "@/features/room/JoinRoomForm";
+import { CreateRoomButton } from "@/features/room/create-room-button";
+import { JoinRoomForm } from "@/features/room/join-room-form";
 
 export const metadata = {
   title: "Lobby | UNO Jala",
