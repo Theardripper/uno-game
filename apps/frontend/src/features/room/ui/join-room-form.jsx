@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAppToast } from "@/hooks/use-app-toast";
 import { roomService } from "@/services/room.service";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useAppToast } from "../../hooks/use-app-toast";
 
 export function JoinRoomForm() {
   const [code, setCode] = useState("");
@@ -22,8 +22,8 @@ export function JoinRoomForm() {
     try {
       // O código no backend deve estar em letras maiúsculas
       const roomCode = code.trim().toUpperCase();
+
       // Em vez de UNO-1234, talvez o usuário digite só 1234?
-      // O nosso backend gera UNO-XYZW, então vamos garantir que tem o prefixo.
       const finalCode = roomCode.startsWith("UNO-") ? roomCode : `UNO-${roomCode}`;
 
       await roomService.joinRoom(finalCode);

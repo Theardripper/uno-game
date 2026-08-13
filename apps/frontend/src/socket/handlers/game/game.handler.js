@@ -8,12 +8,6 @@ import { SocketEvents } from "@shared/socket/events";
 export function registerGameHandlers() {
     console.log("[Socket] Registering game handlers...");
 
-    const onRoomStateUpdated = (room) => {
-        if (room.playerDetails) {
-            useGameStore.getState().actions.patchGame({ players: room.playerDetails });
-        }
-    };
-
     const onGameStateUpdated = (state) => {
         console.log('[GAME STATE UPDATED]', state);
         useGameStore.getState().actions.patchGame({
@@ -51,7 +45,6 @@ export function registerGameHandlers() {
         console.error("Erro do jogo:", error?.message || error);
     };
 
-    socketClient.on(SocketEvents.SERVER_ROOM_STATE, onRoomStateUpdated);
     socketClient.on(SocketEvents.SERVER_GAME_STATE, onGameStateUpdated);
     socketClient.on(SocketEvents.SERVER_HAND_UPDATED, onHandUpdated);
     socketClient.on(SocketEvents.SERVER_GAME_STARTED, onGameStarted);
@@ -59,7 +52,6 @@ export function registerGameHandlers() {
     socketClient.on(SocketEvents.SERVER_ERROR, onGameError);
 
     return () => {
-        socketClient.off(SocketEvents.SERVER_ROOM_STATE, onRoomStateUpdated);
         socketClient.off(SocketEvents.SERVER_GAME_STATE, onGameStateUpdated);
         socketClient.off(SocketEvents.SERVER_HAND_UPDATED, onHandUpdated);
         socketClient.off(SocketEvents.SERVER_GAME_STARTED, onGameStarted);

@@ -1,9 +1,27 @@
-import { useGameStore as store } from "./game.store";
+import { useShallow } from "zustand/react/shallow";
+
+import { useGameStore } from "./game.store";
 
 /**
- * Hook para acessar o store do jogo de forma mais direta.
- * Mantemos o padrão do room.store.js
+ * Hook responsável por expor o estado do jogo.
+ *
+ * Utiliza useShallow para evitar re-renders desnecessários
+ * quando propriedades não consumidas mudam.
  */
 export const useGame = () => {
-    return store((state) => state);
+    return useGameStore(
+        useShallow((state) => ({
+            topCard: state.topCard,
+            currentTurn: state.currentTurn,
+            currentColor: state.currentColor,
+            players: state.players,
+            hand: state.hand,
+            deckCount: state.deckCount,
+            status: state.status,
+            winnerId: state.winnerId,
+            endReason: state.endReason,
+            matchResults: state.matchResults,
+            actions: state.actions,
+        }))
+    );
 };
