@@ -84,6 +84,15 @@ export const GameEvents = {
 
     // Broadcasts the outcome of a +4 challenge and applies penalties
     SERVER_CHALLENGE_RESULT: "server:challenge-result",
+
+    // Broadcasts the private hand of a player to their specific socket
+    SERVER_HAND_UPDATED: "server:hand-updated",
+
+    // Broadcasts when the match has successfully started and clients should transition to the game screen
+    SERVER_GAME_STARTED: "server:game-started",
+
+    // Broadcasts when the match is over (winner decided or abandoned)
+    SERVER_GAME_FINISHED: "server:game-finished",
 };
 
 export const ChatEvents = {

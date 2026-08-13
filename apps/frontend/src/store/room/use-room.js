@@ -16,6 +16,7 @@ export function useRoom() {
             status: state.status,
             maxPlayers: state.maxPlayers,
             players: state.players,
+            playerDetails: state.playerDetails,
             actions: state.actions,
         }))
     );

@@ -12,6 +12,7 @@ const initialState = {
     status: null,
     maxPlayers: 0,
     players: [],
+    playerDetails: [],
 };
 
 /**
@@ -48,10 +49,45 @@ export const useRoomStore = create((set) => ({
          * @param {Object} room Estado completo da sala.
          */
         setRoom(room) {
-            set(() => ({
-                ...initialState,
-                ...room,
-            }));
+            set((state) => {
+                let newPlayerDetails = room.playerDetails;
+                
+                if (!newPlayerDetails && room.players) {
+                    newPlayerDetails = (state.playerDetails || [])
+                        .filter(pd => room.players.some(p => p.id === pd.id))
+                        .map(pd => {
+                            const updatedPlayer = room.players.find(p => p.id === pd.id);
+                            if (!updatedPlayer) return pd;
+                            return {
+                                ...pd,
+                                ready: updatedPlayer.isReady,
+                                isHost: updatedPlayer.isHost,
+                                connected: updatedPlayer.connected
+                            };
+                        });
+                    
+                    const existingIds = new Set(newPlayerDetails.map(p => p.id));
+                    const newPlayers = room.players.filter(p => !existingIds.has(p.id));
+                    
+                    for (const np of newPlayers) {
+                        newPlayerDetails.push({
+                            id: np.id,
+                            name: np.name,
+                            ready: np.isReady,
+                            isHost: np.isHost,
+                            connected: np.connected,
+                            level: np.level || 1,
+                            avatarSeed: np.avatarSeed || `https://api.dicebear.com/9.x/avataaars/svg?seed=${np.name}`,
+                        });
+                    }
+                }
+
+                return {
+                    ...initialState,
+                    ...room,
+                    playerDetails: newPlayerDetails || state.playerDetails || [],
+                };
+            });
         },
 
         /**

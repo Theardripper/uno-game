@@ -77,7 +77,7 @@ export default function Page() {
 
           <Button
             onClick={() =>
-              room.actions.joinRoom("a5ebcd24-34ad-43db-8260-29aefb6a5ab1")
+              console.log("Simulate join room: a5ebcd24-34ad-43db-8260-29aefb6a5ab1")
             }
           >
             Simular entrada na sala
