@@ -149,27 +149,70 @@ export default function registerGameSocket(io, socket) {
         callback?.({ success: true, color: payload?.color });
     });
 
+    /**
+     * Jogador declara "UNO" ao ficar com 1 carta na mão.
+     * Regra: gameEngine.sayUno só aceita se hand.length === 1;
+     * caso contrário lança AppError (tratado no catch abaixo).
+     */
     socket.on(GameEvents.CLIENT_CALL_UNO, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): marcar o grito de UNO no estado do player.
-        callback?.({ success: true });
+        try {
+            const game = gameEngine.sayUno(room.code, player.id);
+            broadcastGameState(io, game);
+            callback?.({ success: true });
+        } catch (error) {
+            emitError(ErrorCodes.INVALID_PAYLOAD, error.message);
+            callback?.({ success: false });
+        }
     });
 
+    /**
+     * Um jogador denuncia outro por não ter dito "UNO" a tempo.
+     * payload.targetId = id do jogador denunciado.
+     * Se a denúncia for válida (o denunciado não disse UNO e está
+     * com 1 carta), ele compra 2 cartas de penalidade.
+     */
     socket.on(GameEvents.CLIENT_CATCH_UNO, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): aplicar penalidade se a denúncia for válida.
-        callback?.({ success: true });
+        const targetId = payload?.targetId;
+
+        if (!targetId) {
+            emitError(ErrorCodes.INVALID_PAYLOAD, "targetId é obrigatório");
+            return callback?.({ success: false });
+        }
+
+        try {
+            const result = gameEngine.challengePlayer(room.code, player.id, targetId);
+
+            io.to(room.code).emit(GameEvents.SERVER_CHALLENGE_RESULT, {
+                challengerId: player.id,
+                challengedId: targetId,
+                success: result.success,
+                message: result.message,
+            });
+
+            broadcastGameState(io, result.game);
+            checkFinished(result.game, room.code);
+
+            callback?.({ success: true, challengeSucceeded: result.success });
+        } catch (error) {
+            emitError(ErrorCodes.INVALID_PAYLOAD, error.message);
+            callback?.({ success: false });
+        }
     });
 
     socket.on(GameEvents.CLIENT_CHALLENGE_DRAW_FOUR, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): resolver o desafio e emitir SERVER_CHALLENGE_RESULT.
+        // TODO(game-engine): resolver o desafio ao +4 (mecânica diferente do
+        // catch-UNO acima: exige verificar se o jogador penalizado tinha uma
+        // carta válida da cor anterior na mão no momento da jogada). Ainda não
+        // implementado no gameEngine.
         callback?.({ success: true });
     });
 
