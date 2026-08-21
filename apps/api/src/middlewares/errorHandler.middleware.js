@@ -1,4 +1,5 @@
 import { AppError } from '#shared/errors/AppError.js';
+import { logger } from '#shared/logger/logger.js';
 
 /**
  * Global error handler middleware.
@@ -31,7 +32,7 @@ export const errorHandler = (err, req, res, next) => {
     }
 
     // Unexpected errors — never expose internals
-    console.error('Unhandled error:', err);
+    logger.error('Unhandled error', { error: err });
     return res.status(500).json({
         error: {
             code: 'INTERNAL_SERVER_ERROR',
