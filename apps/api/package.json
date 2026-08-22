@@ -26,6 +26,7 @@
         "mongoose": "^9.8.0",
         "socket.io": "^4.8.3",
         "swagger-ui-express": "^5.0.1",
+        "winston": "^3.19.0",
         "yamljs": "^0.3.0",
         "zod": "^4.4.3"
     },
@@ -33,24 +34,26 @@
         "jest": "^30.4.2",
         "nodemon": "^3.1.14"
     },
-       "jest": {
-    "setupFiles": ["<rootDir>/jest.setup.js"],
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/**/*.test.js",
-      "!src/**/*.model.js",
-      "!src/**/*.routes.js",
-      "!src/**/index.js",
-      "!src/server.js",
-      "!src/config/**"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 70,
-        "functions": 70,
-        "lines": 70,
-        "statements": 70
-      }
+    "jest": {
+        "setupFiles": [
+            "<rootDir>/jest.setup.js"
+        ],
+        "collectCoverageFrom": [
+            "src/**/*.js",
+            "!src/**/*.test.js",
+            "!src/**/*.model.js",
+            "!src/**/*.routes.js",
+            "!src/**/index.js",
+            "!src/server.js",
+            "!src/config/**"
+        ],
+        "coverageThreshold": {
+            "global": {
+                "branches": 70,
+                "functions": 70,
+                "lines": 70,
+                "statements": 70
+            }
+        }
     }
-  }
 }
