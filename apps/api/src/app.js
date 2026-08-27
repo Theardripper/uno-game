@@ -6,6 +6,7 @@ import YAML from "yamljs";
 
 import { env } from "#config/env.js";
 import { errorHandler } from "#middlewares/errorHandler.middleware.js";
+import { apiTrack } from "#middlewares/tracking.middleware.js";
 import { registerModuleRoutes } from "#modules/index.js";
 
 /**
@@ -22,6 +23,9 @@ export function createApp() {
     // API Documentation
     const swaggerDocument = YAML.load(path.join(import.meta.dirname, "./docs/swagger.yaml"));
     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+    // API Tracking Middleware
+    app.use(apiTrack());
 
     // Module Routes
     registerModuleRoutes(app);

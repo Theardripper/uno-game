@@ -7,8 +7,9 @@ export const createGame = async (gameData, user) => {
     data.game_id = Math.floor(10000 + Math.random() * 90000);
   }
   if (user && !data.creator_username) {
-    data.creator_username = user.username;
-    data.players = [user.username];
+    const identifier = user.id || user.username;
+    data.creator_username = identifier;
+    data.players = [identifier];
   }
   const game = await Game.create(data);
   return game;

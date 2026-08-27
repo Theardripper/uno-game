@@ -47,7 +47,7 @@ export const deleteGame = async (req, res, next) => {
 
 export const joinGame = async (req, res, next) => {
   try {
-    await gameService.joinGame(req.body.game_id, req.user.username);
+    await gameService.joinGame(req.body.game_id, req.user.id || req.user.username);
     return res.status(200).json({ message: 'User joined the game successfully' });
   } catch (error) {
     next(error);
@@ -56,7 +56,7 @@ export const joinGame = async (req, res, next) => {
 
 export const startGame = async (req, res, next) => {
   try {
-    await gameService.startGame(req.body.game_id, req.user.username);
+    await gameService.startGame(req.body.game_id, req.user.id || req.user.username);
     return res.status(200).json({ message: 'Game started successfully' });
   } catch (error) {
     next(error);
@@ -65,7 +65,7 @@ export const startGame = async (req, res, next) => {
 
 export const leaveGame = async (req, res, next) => {
   try {
-    await gameService.leaveGame(req.body.game_id, req.user.username);
+    await gameService.leaveGame(req.body.game_id, req.user.id || req.user.username);
     return res.status(200).json({ message: 'User left the game successfully' });
   } catch (error) {
     next(error);
@@ -74,7 +74,7 @@ export const leaveGame = async (req, res, next) => {
 
 export const endGame = async (req, res, next) => {
   try {
-    await gameService.endGame(req.body.game_id, req.user.username);
+    await gameService.endGame(req.body.game_id, req.user.id || req.user.username);
     return res.status(200).json({ message: 'Game ended successfully' });
   } catch (error) {
     next(error);
