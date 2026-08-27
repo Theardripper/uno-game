@@ -71,3 +71,63 @@ export const getResponseTimeStats = async (req, res) => {
         return res.status(500).json({ message: "Erro interno no servidor." });
     }
 };
+
+/**
+ * GET /stats/status-codes
+ * Retorna os códigos de status HTTP e a contagem de vezes que ocorreram.
+ */
+export const getStatusCodeStats = async (req, res, next) => {
+    try {
+        const logs = await TrackingLog.find();
+
+        const statusCodeCounts = logs.reduce((acc, log) => {
+            const code = log.statusCode;
+            acc[code] = (acc[code] || 0) + 1;
+            return acc;
+        }, {});
+
+        return res.status(200).json(statusCodeCounts);
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * GET /stats/popular-endpoints
+ * Identifica qual foi o endpoint mais acessado e retorna sua quantidade.
+ */
+export const getPopularEndpointsStats = async (req, res, next) => {
+    try {
+        const logs = await TrackingLog.find();
+
+        if (logs.length === 0) {
+            return res.status(200).json({
+                most_popular: null,
+                request_count: 0
+            });
+        }
+
+        const counts = logs.reduce((acc, log) => {
+            const endpoint = log.endpointAccess;
+            acc[endpoint] = (acc[endpoint] || 0) + 1;
+            return acc;
+        }, {});
+
+        // Desempate: Se houver empate, pegamos o primeiro por ordem alfabética da string da rota
+        const mostPopular = Object.entries(counts).reduce((max, current) => {
+            if (current[1] > max[1]) {
+                return current;
+            } else if (current[1] === max[1]) {
+                return current[0] < max[0] ? current : max;
+            }
+            return max;
+        });
+
+        return res.status(200).json({
+            most_popular: mostPopular[0],
+            request_count: mostPopular[1]
+        });
+    } catch (error) {
+        next(error);
+    }
+};
