@@ -3,6 +3,7 @@ import express from "express";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import trackingRoutes from "#modules/tracking/tracking.routes.js";
 
 import { env } from "#config/env.js";
 import { errorHandler } from "#middlewares/errorHandler.middleware.js";
@@ -35,6 +36,9 @@ export function createApp() {
 
     // Global Error Handle
     app.use(errorHandler);
+
+    // Rotas
+    app.use("/stats", trackingRoutes);
 
     return app;
 }
