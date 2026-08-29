@@ -134,3 +134,12 @@ export const getScores = async (req, res, next) => {
     next(error);
   }
 };
+
+export const listGames = async (req, res, next) => {
+  try {
+    const games = await gameService.listGames();
+    return success(res, games, 'Games fetched successfully');
+  } catch (error) {
+    next(error);
+  }
+};

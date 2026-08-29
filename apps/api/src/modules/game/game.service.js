@@ -116,3 +116,7 @@ export const getScores = async (game_id) => {
   const scoresObj = game.scores ? Object.fromEntries(game.scores) : { Player1: 100, Player2: 75 };
   return { game_id: game.game_id, scores: scoresObj };
 };
+
+export const listGames = async () => {
+  return await Game.find();
+};
