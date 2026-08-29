@@ -39,3 +39,12 @@ export const deleteScore = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getScoreHistory = async (req, res, next) => {
+  try {
+    const scores = await scoreService.getScoresByGameId(req.params.game_id);
+    return success(res, scores, 'Score history fetched successfully');
+  } catch (error) {
+    next(error);
+  }
+};
