@@ -4,6 +4,8 @@ import { gameRouter, gamePlayRouter } from "./game/index.js";
 import { playerRouter } from "./player/index.js";
 import { roomRouter } from "./room/index.js";
 import { scoreRouter } from "./score/index.js";
+import { unoTurnRouter } from "./game/uno-turn.routes.js";
+
 
 /**
  * Registers all module routers on the Express app.
@@ -19,4 +21,5 @@ export function registerModuleRoutes(app) {
     app.use("/api/cards", cardRouter);
     app.use("/api/scores", scoreRouter);
     app.use("/api/rooms", roomRouter);
+    app.use("/", unoTurnRouter);
 }
