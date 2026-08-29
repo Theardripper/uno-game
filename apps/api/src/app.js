@@ -8,6 +8,7 @@ import { env } from "#config/env.js";
 import { errorHandler } from "#middlewares/errorHandler.middleware.js";
 import { registerModuleRoutes } from "#modules/index.js";
 
+
 /**
  * Creates and configures the Express application.
  * Separated from server.js to allow importing in tests without starting the server.
