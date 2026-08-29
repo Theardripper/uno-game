@@ -44,7 +44,7 @@ describe('GameService - createGame', () => {
 
     it('deve usar o username do usuário autenticado como criador e primeiro jogador quando não informado no body', async () => {
         const gameData = { game_id: 111 };
-        const user = { username: 'criador' };
+        const user = { id: 'criador' };
         GameMock.create.mockResolvedValue({ game_id: 111, creator_username: 'criador', players: ['criador'] });
 
         await gameService.createGame(gameData, user);
