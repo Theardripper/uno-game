@@ -7,8 +7,8 @@ export const createGame = async (gameData, user) => {
     data.game_id = Math.floor(10000 + Math.random() * 90000);
   }
   if (user && !data.creator_username) {
-    data.creator_username = user.username;
-    data.players = [user.username];
+    data.creator_username = user.id;
+    data.players = [user.id];
   }
   const game = await Game.create(data);
   return game;
@@ -115,4 +115,8 @@ export const getScores = async (game_id) => {
   if (!game) throw new AppError('Game not found', 404);
   const scoresObj = game.scores ? Object.fromEntries(game.scores) : { Player1: 100, Player2: 75 };
   return { game_id: game.game_id, scores: scoresObj };
+};
+
+export const listGames = async () => {
+  return await Game.find();
 };
