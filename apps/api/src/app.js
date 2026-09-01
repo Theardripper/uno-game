@@ -3,6 +3,7 @@ import express from "express";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { logger } from "#shared/logger/logger.js";
 
 import { env } from "#config/env.js";
 import { errorHandler } from "#middlewares/errorHandler.middleware.js";
@@ -24,7 +25,7 @@ export function createApp() {
     app.use((req, res, next) => {
         const start = Date.now();
         res.on("finish", () => {
-            logger.info(${req.method} ${req.originalUrl} ${res.statusCode} - ${Date.now() - start}ms);
+            logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${Date.now() - start}ms`);
         });
         next();
     });
