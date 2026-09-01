@@ -49,6 +49,10 @@ export const startGame = async (game_id, username) => {
   const game = await Game.findOne({ game_id });
   if (!game) throw new AppError('Game not found', 404);
 
+   if (game.state === 'ended') {
+    throw new AppError('Game has already ended', 400);
+  }
+
   if (game.creator_username && game.creator_username !== username) {
     throw new AppError('Only the creator can start the game', 403);
   }
