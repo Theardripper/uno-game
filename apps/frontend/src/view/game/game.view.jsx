@@ -71,7 +71,7 @@ export function GameView({ code }) {
 
                 {/* Bottom Section (Minha Mão) */}
                 <div className="col-start-2 row-start-3 flex flex-col items-center justify-end pb-4 pointer-events-auto z-20">
-                    <Hand />
+                    <Hand myPlayerId={myPlayerId} />
                     <div className="mt-4">
                         {bottomPlayer && <PlayerSlot playerId={bottomPlayer.id} position="bottom" />}
                     </div>
