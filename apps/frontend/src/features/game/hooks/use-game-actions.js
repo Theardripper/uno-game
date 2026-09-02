@@ -41,6 +41,13 @@ export const useGameActions = () => {
     }, [code]);
 
     /**
+     * Declara "UNO!" quando o jogador fica com poucas cartas na mão.
+     */
+    const callUno = useCallback(() => {
+        socketClient.emit(SocketEvents.CLIENT_CALL_UNO, { roomCode: code });
+    }, [code]);
+
+    /**
      * Sai da partida em andamento.
      * Reseta o store do jogo e redireciona para o lobby.
      */
@@ -63,6 +70,7 @@ export const useGameActions = () => {
     return {
         playCard,
         drawCard,
+        callUno,
         leaveGame,
         isLeaving,
     };
