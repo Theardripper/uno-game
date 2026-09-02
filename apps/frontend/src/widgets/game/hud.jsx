@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { GAME_CONSTANTS } from "@/constants/game.constants";
+import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGame } from "@/store/game/use-game";
 import { motion } from "framer-motion";
 import { AlertCircle, Timer } from "lucide-react";
@@ -10,8 +12,21 @@ import { useEffect, useState } from "react";
  * Exibe o Timer e o botão de UNO.
  */
 export const HUD = () => {
-    const { currentTurn } = useGame();
+    const { currentTurn, hand } = useGame();
+    const { callUno } = useGameActions();
     const [timeLeft, setTimeLeft] = useState(GAME_CONSTANTS.TURN_DURATION_SECONDS);
+
+    // Regra do UNO: só pode declarar com exatamente 1 carta na mão (validado pelo backend).
+    const canCallUno = hand?.length === 1;
+
+    const handleCallUno = () => {
+        if (!canCallUno) return;
+        callUno();
+        toast.add({
+            title: "UNOOOOOO!!",
+            type: "success",
+        });
+    };
 
     // Inicia e limpa o intervalo do timer, resetando sempre que o turno mudar
     useEffect(() => {
@@ -42,12 +57,13 @@ export const HUD = () => {
                 </motion.div>
             </div>
 
-            {/* Bottom HUD: Controles do Jogador (Botão UNO) */}
+            {/* Bottom HUD: Controles do Jogador (Botão UNO) — sempre visível, só destrava com 1 carta na mão */}
             <div className="w-full flex justify-end items-end pb-12 pr-12 pointer-events-auto">
                 <Button
                     size="lg"
+                    disabled={!canCallUno}
                     className="w-32 h-32 rounded-full bg-linear-to-br from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 border-4 border-white/20 shadow-2xl shadow-red-500/50 flex flex-col items-center justify-center gap-2 group transition-all"
-                    onClick={() => console.log("UNO button clicked")}
+                    onClick={handleCallUno}
                 >
                     <span className="text-4xl font-black italic tracking-tighter drop-shadow-md group-hover:scale-110 transition-transform">
                         UNO!
