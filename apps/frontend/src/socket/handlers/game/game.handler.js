@@ -1,3 +1,4 @@
+import { toast } from "@/components/ui/toast";
 import { socketClient } from "@/socket/socket-client";
 import { useGameStore } from "@/store/game/game.store";
 import { SocketEvents } from "@shared/socket/events";
@@ -41,14 +42,29 @@ export function registerGameHandlers() {
         });
     };
 
+    const onChallengeResult = (result) => {
+        console.log('[CHALLENGE RESULT]', result);
+        toast.add({
+            title: "UNO!",
+            description: result.message,
+            type: result.success ? "warning" : "info",
+        });
+    };
+
     const onGameError = (error) => {
         console.error("Erro do jogo:", error?.message || error);
+        toast.add({
+            title: "Jogada inválida",
+            description: error?.message || "Não foi possível concluir a ação.",
+            type: "error",
+        });
     };
 
     socketClient.on(SocketEvents.SERVER_GAME_STATE, onGameStateUpdated);
     socketClient.on(SocketEvents.SERVER_HAND_UPDATED, onHandUpdated);
     socketClient.on(SocketEvents.SERVER_GAME_STARTED, onGameStarted);
     socketClient.on(SocketEvents.SERVER_GAME_FINISHED, onGameFinished);
+    socketClient.on(SocketEvents.SERVER_CHALLENGE_RESULT, onChallengeResult);
     socketClient.on(SocketEvents.SERVER_ERROR, onGameError);
 
     return () => {
@@ -56,6 +72,7 @@ export function registerGameHandlers() {
         socketClient.off(SocketEvents.SERVER_HAND_UPDATED, onHandUpdated);
         socketClient.off(SocketEvents.SERVER_GAME_STARTED, onGameStarted);
         socketClient.off(SocketEvents.SERVER_GAME_FINISHED, onGameFinished);
+        socketClient.off(SocketEvents.SERVER_CHALLENGE_RESULT, onChallengeResult);
         socketClient.off(SocketEvents.SERVER_ERROR, onGameError);
     };
 }
