@@ -205,57 +205,53 @@ class GameEngine {
 
         const cardToPlay = player.hand[cardIndex];
 
-        // Validação da jogada
         if (!canPlayCard(cardToPlay, game.topCard, game.currentColor)) {
             throw new AppError("Jogada inválida! A carta não combina com a cor ou valor atual.", 400);
         }
 
-        // Se for Wild, exige selectedColor
         if (cardToPlay.color === "wild" && !selectedColor) {
             throw new AppError("Você precisa escolher uma cor para a carta curinga", 400);
         }
 
-        // 1. Remove da mão e joga na mesa
         player.hand.splice(cardIndex, 1);
         game.discardPile.push(cardToPlay);
         game.topCard = cardToPlay;
         game.currentColor = cardToPlay.color === "wild" ? selectedColor : cardToPlay.color;
-
-        // Jogar uma carta muda a contagem da mão: invalida um UNO já declarado
-        // (o jogador precisa dizer UNO de novo se ficar com 1 carta após esta jogada)
         player.saidUno = false;
 
         this._logHistory(game, playerId, "played_card", {
             card: { color: cardToPlay.color, value: cardToPlay.value },
         });
 
-        // 2. Aplica efeitos da carta (Skip, Reverse, Draw)
         let stepsToAdvance = 1;
         let cardsToDrawForNext = 0;
+        let event = { type: "card_played", playerId, card: { color: cardToPlay.color, value: cardToPlay.value } };
 
         switch (cardToPlay.value) {
             case "reverse":
-                // Se tiver apenas 2 jogadores, reverse funciona como skip
                 if (game.players.length === 2) {
                     stepsToAdvance = 2;
                 } else {
                     game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 }
+                event = { type: "reverse", playerId, newDirection: game.direction };
                 break;
-            case "skip":
+            case "skip": {
                 stepsToAdvance = 2;
+                const skippedIndex = this._getNextTurnIndex(game, 1);
+                event = { type: "skip", playerId, skippedPlayerId: game.players[skippedIndex].id, skippedPlayerName: game.players[skippedIndex].name };
                 break;
+            }
             case "draw_two":
                 cardsToDrawForNext = 2;
-                stepsToAdvance = 2; // Pula o turno do jogador penalizado
+                stepsToAdvance = 2;
                 break;
             case "wild_draw_four":
                 cardsToDrawForNext = 4;
-                stepsToAdvance = 2; // Pula o turno do jogador penalizado
+                stepsToAdvance = 2;
                 break;
         }
 
-        // Penalidades (Draw 2 / Draw 4)
         if (cardsToDrawForNext > 0) {
             const nextTurnIndex = this._getNextTurnIndex(game, 1);
             const nextPlayer = game.players[nextTurnIndex];
@@ -265,16 +261,21 @@ class GameEngine {
                 const drawn = drawCards(game.deck, 1);
                 if (drawn.length > 0) nextPlayer.hand.push(...drawn);
             }
-
-            // A penalidade muda a contagem da mão do próximo jogador
             nextPlayer.saidUno = false;
+
+            event = {
+                type: cardToPlay.value,
+                playerId,
+                targetPlayerId: nextPlayer.id,
+                cardsDrawn: cardsToDrawForNext,
+            };
         }
 
-        // 3. Atualiza o turno
+        game.lastEvent = event;
+
         game.turnIndex = this._getNextTurnIndex(game, stepsToAdvance);
         game.currentTurn = game.players[game.turnIndex].id;
 
-        // 4. Verifica condição de vitória (Hand Vazia)
         if (player.hand.length === 0) {
             game.status = "finished";
             game.winnerId = player.id;
@@ -284,7 +285,6 @@ class GameEngine {
 
         return game;
     }
-
     /**
      * Ação: O jogador declara "UNO" quando fica com exatamente 1 carta na mão.
      * Deve ser chamado como uma ação separada após jogar/comprar.
