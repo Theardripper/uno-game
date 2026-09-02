@@ -1,11 +1,13 @@
 import { UnoCard } from "@/components/ui/uno-card";
 import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGame } from "@/store/game/use-game";
+import { isPlayableCard as isPlayable } from "@shared/game/rules";
 import { AnimatePresence, motion } from "framer-motion";
 
-export const Hand = () => {
-    const { hand } = useGame();
+export const Hand = ({ myPlayerId }) => {
+    const { hand, topCard, currentColor, currentTurn } = useGame();
     const { playCard } = useGameActions();
+    const isMyTurn = currentTurn === myPlayerId;
 
     if (!hand || hand.length === 0) return null;
 
@@ -24,21 +26,25 @@ export const Hand = () => {
 
                     // Espaçamento dinâmico para evitar que ultrapasse a tela
                     const spacing = Math.min(120, 800 / hand.length);
+                    // isPlayable só compara a carta com o topo; sem isMyTurn, cartas
+                    // compatíveis ficavam clicáveis fora da vez e o servidor rejeitava.
+                    const playable = isMyTurn && isPlayable(card, topCard, currentColor);
 
                     return (
                         <motion.div
                             key={card.id}
+                            layoutId={`card-${card.id}`}
                             initial={{ opacity: 0, y: 150 }}
                             animate={{ opacity: 1, y: translateY, rotate }}
                             exit={{ opacity: 0, y: -50, scale: 0.5 }}
-                            whileHover={{ y: -40, rotate: 0, zIndex: 100, scale: 1.1 }}
+                            whileHover={playable ? { y: -40, rotate: 0, zIndex: 100, scale: 1.1 } : {}}
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                            className="absolute origin-bottom cursor-pointer transition-shadow"
+                            className={`absolute origin-bottom transition-shadow ${playable ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
                             style={{
                                 marginLeft: `${offset * spacing}px`,
                                 zIndex: index
                             }}
-                            onClick={() => playCard(card)}
+                            onClick={() => playable && playCard(card)}
                         >
                             <UnoCard
                                 color={card.color}
