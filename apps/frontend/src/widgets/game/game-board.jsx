@@ -15,8 +15,10 @@ export const GameBoard = () => {
     const { topCard, currentColor, currentTurn, deckCount } = useGame();
     const { drawCard } = useGameActions();
 
-    // Utilizaremos o próprio topCard como chave para refazer a animação
-    const discardKey = topCard ? `${topCard.color}-${topCard.type}-${topCard.value}` : 'empty';
+    // O id da carta (não cor/valor) garante que cartas repetidas (ex: dois "amarelo 5"
+    // seguidos) sejam tratadas como itens distintos pelo AnimatePresence, e é o mesmo
+    // id usado como layoutId em hand.jsx — é o que permite a animação de "voo".
+    const discardKey = topCard ? topCard.id : 'empty';
 
     const colorMap = {
         red: "bg-red-500",
@@ -77,6 +79,7 @@ export const GameBoard = () => {
                             <AnimatePresence mode="popLayout">
                                 <motion.div
                                     key={`discard-${discardKey}`}
+                                    layoutId={`card-${topCard.id}`}
                                     initial={{ opacity: 0, scale: 0.5, y: -50, rotate: -15 }}
                                     // eslint-disable-next-line react-hooks/purity
                                     animate={{ opacity: 1, scale: 1, y: 0, rotate: Math.random() * 10 - 5 }}
