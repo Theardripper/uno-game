@@ -53,6 +53,10 @@ export const startGame = async (game_id, username) => {
     throw new AppError('Game has already ended', 400);
   }
 
+    if (game.players.length < 2) {
+    throw new AppError('At least 2 players are required to start the game', 400);
+  }
+
   if (game.creator_username && game.creator_username !== username) {
     throw new AppError('Only the creator can start the game', 403);
   }
