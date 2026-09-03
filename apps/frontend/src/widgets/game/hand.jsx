@@ -1,18 +1,16 @@
 import { UnoCard } from "@/components/ui/uno-card";
-import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGame } from "@/store/game/use-game";
 import { isPlayableCard as isPlayable } from "@shared/game/rules";
 import { AnimatePresence, motion } from "framer-motion";
 
-export const Hand = ({ myPlayerId }) => {
+export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
     const { hand, topCard, currentColor, currentTurn } = useGame();
-    const { playCard } = useGameActions();
     const isMyTurn = currentTurn === myPlayerId;
 
     if (!hand || hand.length === 0) return null;
 
     return (
-        <div className="relative flex justify-center items-end h-56 w-full max-w-4xl mx-auto px- pb-8">
+        <div className={`relative flex justify-center items-end h-56 w-full max-w-4xl mx-auto px- pb-8 ${isPickingColor ? "pointer-events-none" : ""}`}>
             <AnimatePresence>
                 {hand.map((card, index) => {
                     const offset = index - (hand.length - 1) / 2;
