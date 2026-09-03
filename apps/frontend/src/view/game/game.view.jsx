@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ColorPickerModal } from "@/components/ui/color-picker-modal";
 import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGameSocket } from "@/features/game/hooks/use-game-socket";
@@ -10,6 +11,7 @@ import { GameOverModal } from "@/widgets/game/game-over-modal";
 import { Hand } from "@/widgets/game/hand";
 import { HUD } from "@/widgets/game/hud";
 import { PlayerSlot } from "@/widgets/game/player-slot";
+import { UnoAnnouncement } from "@/widgets/game/uno-announcement";
 import { Settings } from "lucide-react";
 import { useState } from "react";
 
@@ -18,7 +20,7 @@ export function GameView({ code }) {
     const [showSettings, setShowSettings] = useState(false);
 
     const { playerId: myPlayerId } = useCurrentUser();
-    const { leaveGame, isLeaving } = useGameActions();
+    const { leaveGame, isLeaving, isPickingColor, confirmColor, playCard } = useGameActions();
 
     // Inicializar Sockets através do hook centralizado
     useGameSocket(code, myPlayerId);
@@ -61,7 +63,7 @@ export function GameView({ code }) {
 
                 {/* Center Section (Mesa) */}
                 <div className="col-start-2 row-start-2 flex items-center justify-center pointer-events-auto z-10">
-                    <GameBoard />
+                    <GameBoard myPlayerId={myPlayerId} />
                 </div>
 
                 {/* Right Section */}
@@ -71,12 +73,18 @@ export function GameView({ code }) {
 
                 {/* Bottom Section (Minha Mão) */}
                 <div className="col-start-2 row-start-3 flex flex-col items-center justify-end pb-4 pointer-events-auto z-20">
-                    <Hand />
+                    <Hand myPlayerId={myPlayerId} isPickingColor={isPickingColor} playCard={playCard} />
                     <div className="mt-4">
                         {bottomPlayer && <PlayerSlot playerId={bottomPlayer.id} position="bottom" />}
                     </div>
                 </div>
             </div>
+
+            {/* Modal de seleção de cor para curingas (Wild / +4) */}
+            <ColorPickerModal isOpen={isPickingColor} onColorSelected={confirmColor} />
+
+            {/* Banner de "UNO!" visível pra mesa toda quando alguém declara de verdade */}
+            <UnoAnnouncement />
 
             {/* GameOver Modal Overlay */}
             <GameOverModal

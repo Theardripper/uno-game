@@ -14,6 +14,8 @@ export const useGame = () => {
             topCard: state.topCard,
             currentTurn: state.currentTurn,
             currentColor: state.currentColor,
+            direction: state.direction,
+            unoAnnouncement: state.unoAnnouncement,
             players: state.players,
             hand: state.hand,
             deckCount: state.deckCount,
