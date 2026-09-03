@@ -13,23 +13,28 @@ export const useGameActions = () => {
     const router = useRouter();
     const [isLeaving, setIsLeaving] = useState(false);
 
+    // Estado do seletor de cor para curingas.
+    // pendingWildCard guarda a carta curinga que o jogador clicou,
+    // enquanto aguardamos a escolha de cor no ColorPickerModal.
+    const [pendingWildCard, setPendingWildCard] = useState(null);
+    const isPickingColor = pendingWildCard !== null;
+
     /**
      * Tenta descartar uma carta da mão.
+     * Se for curinga, abre o modal de cor em vez de emitir imediatamente.
      * @param {object} card A carta a ser jogada.
      */
     const playCard = useCallback((card) => {
-        let selectedColor = card.color;
-
-        // MVP: Se for curinga, hardcodeamos "red".
-        // TODO: No futuro, isso deve abrir um modal que passará a cor escolhida.
-        if (selectedColor === "wild") {
-            selectedColor = "red";
+        if (card.color === "wild") {
+            // Segura o emit: abre o modal e aguarda confirmColor()
+            setPendingWildCard(card);
+            return;
         }
 
         socketClient.emit(SocketEvents.CLIENT_PLAY_CARD, {
             roomCode: code,
             cardId: card.id,
-            color: selectedColor
+            color: card.color,
         });
     }, [code]);
 
@@ -39,6 +44,28 @@ export const useGameActions = () => {
     const drawCard = useCallback(() => {
         socketClient.emit(SocketEvents.CLIENT_DRAW_CARD, { roomCode: code });
     }, [code]);
+
+    /**
+     * Declara "UNO!" quando o jogador fica com poucas cartas na mão.
+     */
+    const callUno = useCallback(() => {
+        socketClient.emit(SocketEvents.CLIENT_CALL_UNO, { roomCode: code });
+    }, [code]);
+
+    /**
+     * Confirma a cor escolhida no ColorPickerModal para um curinga pendente.
+     * Só emite CLIENT_PLAY_CARD agora, com a cor real, backend recebe tudo junto.
+     * @param {string} color - "red" | "blue" | "green" | "yellow"
+     */
+    const confirmColor = useCallback((color) => {
+        if (!pendingWildCard) return;
+        socketClient.emit(SocketEvents.CLIENT_PLAY_CARD, {
+            roomCode: code,
+            cardId: pendingWildCard.id,
+            color,
+        });
+        setPendingWildCard(null);
+    }, [code, pendingWildCard]);
 
     /**
      * Sai da partida em andamento.
@@ -63,7 +90,10 @@ export const useGameActions = () => {
     return {
         playCard,
         drawCard,
+        callUno,
         leaveGame,
         isLeaving,
+        isPickingColor,
+        confirmColor,
     };
 };
