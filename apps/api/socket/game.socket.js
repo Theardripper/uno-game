@@ -111,6 +111,11 @@ export default function registerGameSocket(io, socket) {
         try {
             const game = gameEngine.playCard(room.code, player.id, payload?.cardId, payload?.color);
             broadcastGameState(io, game);
+
+            if (game.lastEvent) {
+                io.to(room.code).emit(GameEvents.SERVER_GAME_EVENT, game.lastEvent);
+            }
+            
             checkFinished(game, room.code);
             callback?.({ success: true, card: payload?.cardId });
         } catch (error) {

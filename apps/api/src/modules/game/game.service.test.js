@@ -188,12 +188,37 @@ describe('GameService - startGame', () => {
 
     it('deve lançar AppError 403 quando quem tenta iniciar não for o criador', async () => {
         const save = jest.fn();
-        const fakeGame = { creator_username: 'criador', players: ['criador'], save };
+        // CORREÇÃO AQUI: adicionado o segundo jogador ('p2') para passar da regra de < 2 jogadores
+        const fakeGame = { creator_username: 'criador', players: ['criador', 'p2'], save };
         GameMock.findOne.mockResolvedValue(fakeGame);
 
         await expect(gameService.startGame(111, 'intruso')).rejects.toMatchObject({
             message: 'Only the creator can start the game',
             statusCode: 403,
+        });
+        expect(save).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar AppError 400 se o jogo já estiver encerrado', async () => {
+        const save = jest.fn();
+        const fakeGame = { state: 'ended', creator_username: 'criador', players: ['criador', 'p2'], save };
+        GameMock.findOne.mockResolvedValue(fakeGame);
+
+        await expect(gameService.startGame(111, 'criador')).rejects.toMatchObject({
+            message: 'Game has already ended',
+            statusCode: 400,
+        });
+        expect(save).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar AppError 400 se houver menos de 2 jogadores', async () => {
+        const save = jest.fn();
+        const fakeGame = { creator_username: 'criador', players: ['criador'], save };
+        GameMock.findOne.mockResolvedValue(fakeGame);
+
+        await expect(gameService.startGame(111, 'criador')).rejects.toMatchObject({
+            message: 'At least 2 players are required to start the game',
+            statusCode: 400,
         });
         expect(save).not.toHaveBeenCalled();
     });
