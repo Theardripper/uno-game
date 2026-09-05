@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { ErrorCodes } from "../../shared/api/responses/errors.js";
 import { GameEvents, SystemEvents } from "../../shared/socket/events.js";
 import { calculateXpEarned, getLevel } from "../../shared/utils/progression.js";
@@ -28,8 +29,16 @@ export async function processGameFinishedWithRoomCode(io, game, roomCode) {
 
             const xpEarned = calculateXpEarned(score, resultType);
 
-            // Atualiza o banco de dados
-            const dbPlayer = await Player.findById(player.id);
+            // Atualiza o banco de dados apenas se o player possuir um ObjectId válido
+            let dbPlayer = null;
+            if (mongoose.isValidObjectId(player.id)) {
+                try {
+                    dbPlayer = await Player.findById(player.id);
+                } catch (err) {
+                    console.error("[Game Socket] Error fetching dbPlayer:", err);
+                }
+            }
+
             if (dbPlayer) {
                 const previousLevel = getLevel(dbPlayer.xp);
 
@@ -51,6 +60,18 @@ export async function processGameFinishedWithRoomCode(io, game, roomCode) {
                     totalXp: dbPlayer.xp,
                     level: getLevel(dbPlayer.xp),
                     previousLevel,
+                    isWinner: player.id === game.winnerId,
+                });
+            } else {
+                results.push({
+                    playerId: player.id,
+                    name: player.name,
+                    avatarSeed: player.avatarSeed,
+                    score,
+                    xpEarned,
+                    totalXp: xpEarned,
+                    level: 1,
+                    previousLevel: 1,
                     isWinner: player.id === game.winnerId,
                 });
             }
