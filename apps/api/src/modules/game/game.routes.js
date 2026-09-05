@@ -16,10 +16,8 @@ router.post('/top-card', gameController.getTopCard);
 router.post('/scores', gameController.getScores);
 router.post('/players', gameController.getGamePlayers);
 
-
 // Legacy CRUD routes (from legacy game.routes.js)
 router.post('/', gameController.createGame);
-router.get('/', gameController.listGames);
 router.get('/:id', gameController.getGameById);
 router.put('/:id', gameController.updateGame);
 router.delete('/:id', gameController.deleteGame);

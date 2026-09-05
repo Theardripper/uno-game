@@ -42,7 +42,7 @@ function mockReq(overrides = {}) {
   return {
     params: {},
     body: {},
-    user: { id: 'testuser' },
+    user: { username: 'testuser' },
     ...overrides,
   };
 }
@@ -195,7 +195,7 @@ describe('GameController - deleteGame', () => {
 // ===================== joinGame (2 casos) =====================
 describe('GameController - joinGame', () => {
   it('deve permitir que o usuário entre no jogo (200)', async () => {
-    const req = mockReq({ body: { game_id: 111 }, user: { id: 'novoPlayer' } });
+    const req = mockReq({ body: { game_id: 111 }, user: { username: 'novoPlayer' } });
     const res = mockRes();
     const next = mockNext();
 
@@ -225,7 +225,7 @@ describe('GameController - joinGame', () => {
 // ===================== startGame (2 casos) =====================
 describe('GameController - startGame', () => {
   it('deve iniciar o jogo quando o usuário for o criador (200)', async () => {
-    const req = mockReq({ body: { game_id: 111 }, user: { id: 'criador' } });
+    const req = mockReq({ body: { game_id: 111 }, user: { username: 'criador' } });
     const res = mockRes();
     const next = mockNext();
 
@@ -239,7 +239,7 @@ describe('GameController - startGame', () => {
   });
 
   it('deve chamar next(error) quando alguém que não é o criador tentar iniciar (403)', async () => {
-    const req = mockReq({ body: { game_id: 111 }, user: { id: 'intruso' } });
+    const req = mockReq({ body: { game_id: 111 }, user: { username: 'intruso' } });
     const res = mockRes();
     const next = mockNext();
     const error = new Error('Only the creator can start the game');
@@ -255,7 +255,7 @@ describe('GameController - startGame', () => {
 // ===================== leaveGame (2 casos) =====================
 describe('GameController - leaveGame', () => {
   it('deve permitir que o usuário saia do jogo (200)', async () => {
-    const req = mockReq({ body: { game_id: 111 }, user: { id: 'saindo' } });
+    const req = mockReq({ body: { game_id: 111 }, user: { username: 'saindo' } });
     const res = mockRes();
     const next = mockNext();
 
@@ -285,7 +285,7 @@ describe('GameController - leaveGame', () => {
 // ===================== endGame (2 casos) =====================
 describe('GameController - endGame', () => {
   it('deve encerrar o jogo quando o usuário for o criador (200)', async () => {
-    const req = mockReq({ body: { game_id: 111 }, user: { id: 'criador' } });
+    const req = mockReq({ body: { game_id: 111 }, user: { username: 'criador' } });
     const res = mockRes();
     const next = mockNext();
 
@@ -299,7 +299,7 @@ describe('GameController - endGame', () => {
   });
 
   it('deve chamar next(error) quando alguém que não é o criador tentar encerrar (403)', async () => {
-    const req = mockReq({ body: { game_id: 111 }, user: { id: 'intruso' } });
+    const req = mockReq({ body: { game_id: 111 }, user: { username: 'intruso' } });
     const res = mockRes();
     const next = mockNext();
     const error = new Error('Only the creator can end the game');

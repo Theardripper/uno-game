@@ -5,7 +5,7 @@ export const createGame = async (req, res, next) => {
   try {
     const game = await gameService.createGame(req.body, req.user);
     const hasNameOrRules = req.body.name || req.body.rules;
-
+    
     if (hasNameOrRules) {
       return res.status(201).json({
         message: 'Game created successfully',
@@ -47,7 +47,7 @@ export const deleteGame = async (req, res, next) => {
 
 export const joinGame = async (req, res, next) => {
   try {
-    await gameService.joinGame(req.body.game_id, req.user.id);
+    await gameService.joinGame(req.body.game_id, req.user.username);
     return res.status(200).json({ message: 'User joined the game successfully' });
   } catch (error) {
     next(error);
@@ -56,7 +56,7 @@ export const joinGame = async (req, res, next) => {
 
 export const startGame = async (req, res, next) => {
   try {
-    await gameService.startGame(req.body.game_id, req.user.id);
+    await gameService.startGame(req.body.game_id, req.user.username);
     return res.status(200).json({ message: 'Game started successfully' });
   } catch (error) {
     next(error);
@@ -65,7 +65,7 @@ export const startGame = async (req, res, next) => {
 
 export const leaveGame = async (req, res, next) => {
   try {
-    await gameService.leaveGame(req.body.game_id, req.user.id);
+    await gameService.leaveGame(req.body.game_id, req.user.username);
     return res.status(200).json({ message: 'User left the game successfully' });
   } catch (error) {
     next(error);
@@ -74,7 +74,7 @@ export const leaveGame = async (req, res, next) => {
 
 export const endGame = async (req, res, next) => {
   try {
-    await gameService.endGame(req.body.game_id, req.user.id);
+    await gameService.endGame(req.body.game_id, req.user.username);
     return res.status(200).json({ message: 'Game ended successfully' });
   } catch (error) {
     next(error);
@@ -130,15 +130,6 @@ export const getScores = async (req, res, next) => {
   try {
     const scores = await gameService.getScores(req.body.game_id);
     return res.status(200).json(scores);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const listGames = async (req, res, next) => {
-  try {
-    const games = await gameService.listGames();
-    return success(res, games, 'Games fetched successfully');
   } catch (error) {
     next(error);
   }

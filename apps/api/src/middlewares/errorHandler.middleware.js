@@ -1,5 +1,4 @@
 import { AppError } from '#shared/errors/AppError.js';
-import { logger } from '#shared/logger/logger.js';
 
 /**
  * Global error handler middleware.
@@ -31,17 +30,8 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
-    if (err.name === 'ValidationError') {
-  return res.status(400).json({
-    error: {
-      code: 'VALIDATION_ERROR',
-      message: Object.values(err.errors).map(e => e.message).join(', '),
-    },
-  });
-}
-
     // Unexpected errors — never expose internals
-    logger.error('Unhandled error', { error: err });
+    console.error('Unhandled error:', err);
     return res.status(500).json({
         error: {
             code: 'INTERNAL_SERVER_ERROR',
