@@ -15,3 +15,7 @@ export const updateScore = async (id, updateData) => {
 export const deleteScore = async (id) => {
   return await Score.findByIdAndDelete(id);
 };
+
+export const getScoresByGameId = async (game_id) => {
+  return await Score.find({ gameId: game_id }); 
+};

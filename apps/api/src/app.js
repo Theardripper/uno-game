@@ -3,10 +3,12 @@ import express from "express";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { logger } from "#shared/logger/logger.js";
 
 import { env } from "#config/env.js";
 import { errorHandler } from "#middlewares/errorHandler.middleware.js";
 import { registerModuleRoutes } from "#modules/index.js";
+
 
 /**
  * Creates and configures the Express application.
@@ -18,6 +20,15 @@ export function createApp() {
     // Global Middleware
     app.use(express.json());
     app.use(cors({ origin: env.CORS_ORIGIN }));
+
+    //Depuração manual
+    app.use((req, res, next) => {
+        const start = Date.now();
+        res.on("finish", () => {
+            logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${Date.now() - start}ms`);
+        });
+        next();
+    });
 
     // API Documentation
     const swaggerDocument = YAML.load(path.join(import.meta.dirname, "./docs/swagger.yaml"));
