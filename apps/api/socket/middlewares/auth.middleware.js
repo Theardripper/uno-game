@@ -15,10 +15,22 @@ import { ErrorCodes } from "../../../shared/api/responses/errors.js";
  * @param {import('socket.io').Socket} socket
  * @param {Function} next
  */
+import mongoose from "mongoose";
 import Player from "#modules/player/player.model.js";
 
 export async function authMiddleware(socket, next) {
-    const { token, playerId, name } = socket.handshake.auth || {};
+    const auth = socket.handshake.auth || {};
+    const query = socket.handshake.query || {};
+    const headers = socket.handshake.headers || {};
+
+    const authHeader = headers.authorization;
+    const bearerToken = authHeader?.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : authHeader;
+
+    const token = auth.token || query.token || bearerToken || headers.token;
+    const playerId = auth.playerId || query.playerId || headers["x-player-id"];
+    const name = auth.name || query.name;
 
     if (!token) {
         const error = new Error("token de autenticação ausente");
@@ -29,7 +41,7 @@ export async function authMiddleware(socket, next) {
     let realName = name;
     let realAvatarSeed = undefined;
     let realLevel = 1;
-    if (playerId) {
+    if (playerId && mongoose.isValidObjectId(playerId)) {
         try {
             const playerDoc = await Player.findById(playerId);
             if (playerDoc) {
