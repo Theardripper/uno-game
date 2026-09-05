@@ -7,8 +7,8 @@ export const createGame = async (gameData, user) => {
     data.game_id = Math.floor(10000 + Math.random() * 90000);
   }
   if (user && !data.creator_username) {
-    data.creator_username = user.id;
-    data.players = [user.id];
+    data.creator_username = user.username;
+    data.players = [user.username];
   }
   const game = await Game.create(data);
   return game;
@@ -48,10 +48,6 @@ export const joinGame = async (game_id, username) => {
 export const startGame = async (game_id, username) => {
   const game = await Game.findOne({ game_id });
   if (!game) throw new AppError('Game not found', 404);
-
-   if (game.state === 'ended') {
-    throw new AppError('Game has already ended', 400);
-  }
 
   if (game.creator_username && game.creator_username !== username) {
     throw new AppError('Only the creator can start the game', 403);
@@ -119,8 +115,4 @@ export const getScores = async (game_id) => {
   if (!game) throw new AppError('Game not found', 404);
   const scoresObj = game.scores ? Object.fromEntries(game.scores) : { Player1: 100, Player2: 75 };
   return { game_id: game.game_id, scores: scoresObj };
-};
-
-export const listGames = async () => {
-  return await Game.find();
 };
