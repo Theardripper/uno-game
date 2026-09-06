@@ -10,7 +10,7 @@ export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
     if (!hand || hand.length === 0) return null;
 
     return (
-        <div className={`relative flex justify-center items-end h-56 w-full max-w-4xl mx-auto px- pb-8 ${isPickingColor ? "pointer-events-none" : ""}`}>
+        <div className={`relative flex justify-center items-end h-48 w-full max-w-4xl mx-auto px- pb-8 ${isPickingColor ? "pointer-events-none" : ""}`}>
             <AnimatePresence>
                 {hand.map((card, index) => {
                     const offset = index - (hand.length - 1) / 2;
@@ -48,7 +48,7 @@ export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
                                 color={card.color}
                                 value={card.value}
                                 type={card.type || card.value}
-                                className="w-32 h-48 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_20px_50px_rgb(0,0,0,0.8)]"
+                                className="w-24 h-36 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_20px_50px_rgb(0,0,0,0.8)]"
                             />
                         </motion.div>
                     );
