@@ -14,11 +14,28 @@ import { RotateCcw, RotateCw } from "lucide-react";
  *
  * @param {{ myPlayerId: string }} props
  */
+// Geometria do anel de turno: 2 arcos opostos (estilo "spinner"), calculados
+// a partir do raio pra não precisar recalcular os números na mão se o
+// tamanho mudar. arcDegrees = quanto cada arco cobre; o resto vira o vão.
+const RING_RADIUS = 175;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+const ARC_DEGREES = 100;
+const ARC_LENGTH = (ARC_DEGREES / 360) * RING_CIRCUMFERENCE;
+const GAP_LENGTH = RING_CIRCUMFERENCE / 2 - ARC_LENGTH;
+const RING_DASH_ARRAY = `${ARC_LENGTH} ${GAP_LENGTH} ${ARC_LENGTH} ${GAP_LENGTH}`;
+
 export const GameBoard = ({ myPlayerId }) => {
-    const { topCard, currentColor, deckCount, currentTurn, direction } = useGame();
+    const { topCard, currentColor, deckCount, currentTurn, direction, players } = useGame();
     const { drawCard } = useGameActions();
 
     const isMyTurn = currentTurn === myPlayerId;
+
+    // Gira o anel de turno pra "apontar" pro jogador da vez: cada jogador ocupa
+    // uma fatia igual do círculo, na ordem em que aparecem em `players`.
+    const currentPlayerIndex = players?.findIndex((p) => p.id === currentTurn) ?? -1;
+    const turnRotation = players?.length > 0 && currentPlayerIndex !== -1
+        ? (currentPlayerIndex / players.length) * 360
+        : 0;
 
     // O id da carta (não cor/valor) garante que cartas repetidas (ex: dois "amarelo 5"
     // seguidos) sejam tratadas como itens distintos pelo AnimatePresence, e é o mesmo
@@ -44,14 +61,34 @@ export const GameBoard = ({ myPlayerId }) => {
 
                 {/* Anel decorativo ao redor das cartas */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-90 h-90 rounded-full border border-auth-accent/20" />
+                    <div className="w-76 h-76 rounded-full border border-auth-accent/20" />
                     <motion.div
                         key={displayColor}
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 0.2 }}
                         transition={{ duration: 0.5 }}
-                        className={`absolute w-72 h-72 rounded-full blur-3xl ${colorMap[displayColor] || "bg-gray-500"}`}
+                        className={`absolute w-60 h-60 rounded-full blur-3xl ${colorMap[displayColor] || "bg-gray-500"}`}
                     />
+
+                    {/* Anel de turno: dois arcos que giram até "apontar" pro jogador da vez */}
+                    <motion.svg
+                        viewBox="0 0 360 360"
+                        className="absolute w-76 h-76"
+                        style={{ transformOrigin: "50% 50%" }}
+                        animate={{ rotate: turnRotation }}
+                        transition={{ type: "spring", stiffness: 90, damping: 16 }}
+                    >
+                        <circle
+                            cx="180"
+                            cy="180"
+                            r={RING_RADIUS}
+                            fill="none"
+                            strokeWidth="6"
+                            strokeLinecap="round"
+                            strokeDasharray={RING_DASH_ARRAY}
+                            className="stroke-auth-accent/70"
+                        />
+                    </motion.svg>
                 </div>
 
                 {/* Indicador de direção — animado quando muda */}
@@ -71,7 +108,7 @@ export const GameBoard = ({ myPlayerId }) => {
                             : <RotateCcw className="w-3.5 h-3.5 text-white/70" />
                         }
                     </motion.div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 font-(family-name:--font-rubik)">
                         {isClockwise ? "Horário" : "Anti-horário"}
                     </span>
                 </motion.div>
@@ -100,7 +137,7 @@ export const GameBoard = ({ myPlayerId }) => {
                         </AnimatePresence>
                     ) : (
                         <div className="w-full h-full border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center">
-                            <span className="text-white/40 text-xs">Vazio</span>
+                            <span className="text-white/40 text-xs font-(family-name:--font-rubik)">Vazio</span>
                         </div>
                     )}
                 </div>
@@ -133,7 +170,7 @@ export const GameBoard = ({ myPlayerId }) => {
                             )}
                         </motion.div>
                     </div>
-                    <span className="text-xs font-semibold text-white/50 bg-black/30 px-3 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-white/50 bg-black/30 px-3 py-1 rounded-full font-(family-name:--font-rubik)">
                         {deckCount} Restantes
                     </span>
                 </div>
@@ -141,7 +178,7 @@ export const GameBoard = ({ myPlayerId }) => {
             </div>
 
             {/* Cor da carta da vez */}
-            <span className="text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md text-white/80 shadow-inner flex items-center gap-2 border border-white/10">
+            <span className="text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md text-white/80 shadow-inner flex items-center gap-2 border border-white/10 font-(family-name:--font-rubik)">
                 <span className={`w-2.5 h-2.5 rounded-full ${colorMap[displayColor] || "bg-gray-500"}`} />
                 Cor da carta da vez: {currentColor || topCard?.color || "nenhuma"}
             </span>
