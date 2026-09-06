@@ -27,10 +27,10 @@ export function ColorPickerModal({ isOpen, onColorSelected }) {
                 className="bg-black/80 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-8 max-w-sm w-full"
             >
                 <DialogHeader className="text-center mb-6">
-                    <DialogTitle className="text-2xl font-black text-white tracking-tight">
+                    <DialogTitle className="text-2xl font-black text-white tracking-tight font-(family-name:--font-baloo)">
                         Escolha a cor
                     </DialogTitle>
-                    <p className="text-sm text-white/50 mt-1">
+                    <p className="text-sm text-white/50 mt-1 font-(family-name:--font-rubik)">
                         Você jogou um curinga, escolha a próxima cor
                     </p>
                 </DialogHeader>
@@ -54,7 +54,7 @@ export function ColorPickerModal({ isOpen, onColorSelected }) {
                             `}
                         >
                             <span className="text-3xl">{color.emoji}</span>
-                            <span className="text-sm font-bold uppercase tracking-widest">
+                            <span className="text-sm font-bold uppercase tracking-widest font-(family-name:--font-rubik)">
                                 {color.label}
                             </span>
                         </motion.button>
