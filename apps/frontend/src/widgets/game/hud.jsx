@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GAME_CONSTANTS } from "@/constants/game.constants";
 import { useGameActions } from "@/features/game/hooks/use-game-actions";
@@ -27,16 +28,22 @@ function TurnTimer() {
     }, []);
 
     const isWarning = timeLeft <= GAME_CONSTANTS.TURN_WARNING_SECONDS;
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
 
-    return (  <motion.div
+    return (
+        <motion.div
             animate={isWarning ? { scale: [1, 1.1, 1], color: ["#fff", "#ef4444", "#fff"] } : {}}
             transition={{ repeat: isWarning ? Infinity : 0, duration: 0.5 }}
-            className={`flex items-center gap-3 px-6 py-3 rounded-full bg-black/60 backdrop-blur-md border ${isWarning ? 'border-red-500 shadow-lg shadow-red-500/20' : 'border-white/10 shadow-xl'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border ${isWarning ? 'border-red-500 shadow-lg shadow-red-500/20' : 'border-white/10 shadow-md'}`}
         >
-            {isWarning ? <AlertCircle className="w-6 h-6 text-red-500" /> : <Timer className="w-6 h-6 text-white/70" />}
-            <span className={`text-2xl font-mono font-bold tracking-widest ${isWarning ? 'text-red-500' : 'text-white'}`}>
-                00:{timeLeft.toString().padStart(2, '0')}
-            </span>
+            {isWarning ? <AlertCircle className="w-3.5 h-3.5 text-red-500" /> : <Timer className="w-3.5 h-3.5 text-white/60" />}
+            <div className="flex flex-col leading-none">
+                <span className="text-[7px] font-bold uppercase tracking-widest text-white/50 font-(family-name:--font-rubik)">Round</span>
+                <span className={`text-sm font-mono font-bold tracking-widest ${isWarning ? 'text-red-500' : 'text-white'}`}>
+                    {minutes}:{seconds.toString().padStart(2, '0')}
+                </span>
+            </div>
         </motion.div>
     );
 }
@@ -45,9 +52,10 @@ function TurnTimer() {
  * HUD principal do jogo.
  * Exibe o Timer e o botão de UNO.
  */
-export const HUD = () => {
+export const HUD = ({ myPlayerId }) => {
     const { currentTurn, hand } = useGame();
     const { callUno } = useGameActions();
+    const isMyTurn = currentTurn === myPlayerId;
 
     // Regra do UNO: só pode declarar com exatamente 1 carta na mão (validado pelo backend).
     const canCallUno = hand?.length === 1;
@@ -62,23 +70,34 @@ export const HUD = () => {
     return (
         <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
 
-            {/* Top HUD: Timer */}
-            <div className="w-full flex justify-center">
+            {/* Top HUD: Round Timer + Indicador de turno */}
+            <div className="w-full flex items-center gap-3">
                 <TurnTimer key={currentTurn} />
+
+                {isMyTurn && (
+                    <Badge className="bg-auth-accent text-auth-accent-foreground font-(family-name:--font-rubik)">
+                        Sua vez!
+                    </Badge>
+                )}
             </div>
 
             {/* Bottom HUD: Controles do Jogador (Botão UNO) — sempre visível, só destrava com 1 carta na mão */}
-            <div className="w-full flex justify-end items-end pb-12 pr-12 pointer-events-auto">
-                <Button
-                    size="lg"
-                    disabled={!canCallUno}
-                    className="w-32 h-32 rounded-full bg-linear-to-br from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 border-4 border-white/20 shadow-2xl shadow-red-500/50 flex flex-col items-center justify-center gap-2 group transition-all"
-                    onClick={handleCallUno}
-                >
-                    <span className="text-4xl font-black italic tracking-tighter drop-shadow-md group-hover:scale-110 transition-transform">
-                        UNO!
-                    </span>
-                </Button>
+            <div className="w-full flex justify-end items-end pb-10 pr-10 pointer-events-auto">
+                <div className="relative">
+                    {/* Brilho atrás do botão — mais forte quando dá pra declarar UNO */}
+                    <div className={`absolute inset-0 rounded-full blur-2xl scale-125 transition-opacity duration-300 pointer-events-none ${canCallUno ? "bg-auth-accent/70" : "bg-auth-accent/20"}`} />
+
+                    <Button
+                        size="lg"
+                        disabled={!canCallUno}
+                        className="relative w-28 h-28 rounded-full bg-linear-to-br from-auth-btn-grad-from to-auth-btn-grad-to border-4 border-white/20 shadow-xl flex flex-col items-center justify-center gap-2 group transition-all"
+                        onClick={handleCallUno}
+                    >
+                        <span className="text-3xl font-black italic tracking-tighter drop-shadow-md group-hover:scale-110 transition-transform font-(family-name:--font-baloo)">
+                            UNO!
+                        </span>
+                    </Button>
+                </div>
             </div>
 
         </div>
