@@ -40,13 +40,13 @@ export function GameView({ code }) {
     const rightPlayer = rotatedPlayers[3];
 
     return (
-        <div className="relative w-full h-dvh bg-white overflow-hidden select-none flex flex-col font-sans">
+        <div className="relative w-full h-dvh bg-auth-background overflow-hidden select-none flex flex-col font-sans">
 
             {/* Fundo da Mesa (Radial Gradient para foco no centro) */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-blue-900/20 via-neutral-950 to-neutral-950 pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-auth-accent/15 via-auth-background to-auth-background pointer-events-none" />
 
             {/* HUD (Timer, UNO Button) */}
-            <HUD />
+            <HUD myPlayerId={myPlayerId} />
 
             {/* Layout da Mesa (Grid) */}
             <div className="absolute inset-0 grid grid-rows-[1fr_3fr_1fr] grid-cols-[1fr_3fr_1fr] p-4 gap-4 pointer-events-none">
@@ -95,8 +95,8 @@ export function GameView({ code }) {
 
             {/* Settings Button */}
             <div className="absolute top-6 right-6 z-100 pointer-events-auto">
-                <Button variant="outline" size="icon" className="bg-white/90 backdrop-blur-md text-slate-800 border-slate-200 hover:bg-white shadow-lg rounded-full w-12 h-12" onClick={() => setShowSettings(true)}>
-                    <Settings className="w-6 h-6 text-slate-700" />
+                <Button variant="ghost" size="icon" className="bg-transparent text-white/60 border-transparent hover:bg-white/10 hover:text-white rounded-full w-10 h-10" onClick={() => setShowSettings(true)}>
+                    <Settings className="w-5 h-5" />
                 </Button>
             </div>
 
