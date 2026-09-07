@@ -18,9 +18,10 @@ const responseHelperMock = {
 };
 
 class AppErrorMock extends Error {
-    constructor(message, statusCode) {
+    constructor(message, statusCode, errorCode) {
         super(message);
         this.statusCode = statusCode;
+        this.errorCode = errorCode;
     }
 }
 
@@ -367,7 +368,7 @@ describe('GamePlayController - getGameStatus', () => {
 
         await getGameStatus(req, res, next);
 
-        expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Partida não encontrada', statusCode: 404 }));
+        expect(next).toHaveBeenCalledWith(expect.objectContaining({ errorCode: 'GAME_NOT_FOUND', statusCode: 404 }));
         expect(success).not.toHaveBeenCalled();
     });
 });

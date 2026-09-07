@@ -37,7 +37,7 @@ class GameEngine {
     _getActiveGameOrThrow(roomCode) {
         const game = this.activeGames.get(roomCode);
         if (!game || game.status !== "in_progress") {
-            throw new AppError("Partida não está em andamento", 400);
+            throw new AppError(`The game in room ${roomCode} is not in progress`, 400, "GAME_NOT_IN_PROGRESS");
         }
         return game;
     }
@@ -166,8 +166,8 @@ class GameEngine {
      */
     drawCard(roomCode, playerId) {
         const game = this.activeGames.get(roomCode);
-        if (!game || game.status !== "in_progress") throw new AppError("Partida não está em andamento", 400);
-        if (game.currentTurn !== playerId) throw new AppError("Não é o seu turno", 400);
+        if (!game || game.status !== "in_progress") throw new AppError(`The game in room ${roomCode} is not in progress`, 400, "GAME_NOT_IN_PROGRESS");
+        if (game.currentTurn !== playerId) throw new AppError(`Not your turn: it is ${game.currentTurn}\u0027s turn`, 400, "NOT_YOUR_TURN");
 
         this._recycleDeckIfNeeded(game);
 
@@ -195,63 +195,67 @@ class GameEngine {
      */
     playCard(roomCode, playerId, cardId, selectedColor) {
         const game = this.activeGames.get(roomCode);
-        if (!game || game.status !== "in_progress") throw new AppError("Partida não está em andamento", 400);
-        if (game.currentTurn !== playerId) throw new AppError("Não é o seu turno", 400);
+        if (!game || game.status !== "in_progress") throw new AppError(`The game in room ${roomCode} is not in progress`, 400, "GAME_NOT_IN_PROGRESS");
+        if (game.currentTurn !== playerId) throw new AppError(`Not your turn: it is ${game.currentTurn}\u0027s turn`, 400, "NOT_YOUR_TURN");
 
         const player = game.players.find((p) => p.id === playerId);
         const cardIndex = player.hand.findIndex((c) => c.id === cardId);
 
-        if (cardIndex === -1) throw new AppError("Carta não encontrada na mão do jogador", 400);
+        if (cardIndex === -1) throw new AppError(`Card ${cardId} is not in the player hand`, 400, "INVALID_CARD");
 
         const cardToPlay = player.hand[cardIndex];
 
+        // Validação da jogada
         if (!canPlayCard(cardToPlay, game.topCard, game.currentColor)) {
-            throw new AppError("Jogada inválida! A carta não combina com a cor ou valor atual.", 400);
+            throw new AppError(`Invalid move: card matches neither the current color (${game.currentColor}) nor the top value (${game.topCard.value})`, 400, "INVALID_CARD");
         }
 
+        // Se for Wild, exige selectedColor
         if (cardToPlay.color === "wild" && !selectedColor) {
-            throw new AppError("Você precisa escolher uma cor para a carta curinga", 400);
+            throw new AppError("Wild card requires selectedColor: red, blue, green or yellow", 400, "INVALID_PAYLOAD");
         }
 
+        // 1. Remove da mão e joga na mesa
         player.hand.splice(cardIndex, 1);
         game.discardPile.push(cardToPlay);
         game.topCard = cardToPlay;
         game.currentColor = cardToPlay.color === "wild" ? selectedColor : cardToPlay.color;
+
+        // Jogar uma carta muda a contagem da mão: invalida um UNO já declarado
+        // (o jogador precisa dizer UNO de novo se ficar com 1 carta após esta jogada)
         player.saidUno = false;
 
         this._logHistory(game, playerId, "played_card", {
             card: { color: cardToPlay.color, value: cardToPlay.value },
         });
 
+        // 2. Aplica efeitos da carta (Skip, Reverse, Draw)
         let stepsToAdvance = 1;
         let cardsToDrawForNext = 0;
-        let event = { type: "card_played", playerId, card: { color: cardToPlay.color, value: cardToPlay.value } };
 
         switch (cardToPlay.value) {
             case "reverse":
+                // Se tiver apenas 2 jogadores, reverse funciona como skip
                 if (game.players.length === 2) {
                     stepsToAdvance = 2;
                 } else {
                     game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 }
-                event = { type: "reverse", playerId, newDirection: game.direction };
                 break;
-            case "skip": {
+            case "skip":
                 stepsToAdvance = 2;
-                const skippedIndex = this._getNextTurnIndex(game, 1);
-                event = { type: "skip", playerId, skippedPlayerId: game.players[skippedIndex].id, skippedPlayerName: game.players[skippedIndex].name };
                 break;
-            }
             case "draw_two":
                 cardsToDrawForNext = 2;
-                stepsToAdvance = 2;
+                stepsToAdvance = 2; // Pula o turno do jogador penalizado
                 break;
             case "wild_draw_four":
                 cardsToDrawForNext = 4;
-                stepsToAdvance = 2;
+                stepsToAdvance = 2; // Pula o turno do jogador penalizado
                 break;
         }
 
+        // Penalidades (Draw 2 / Draw 4)
         if (cardsToDrawForNext > 0) {
             const nextTurnIndex = this._getNextTurnIndex(game, 1);
             const nextPlayer = game.players[nextTurnIndex];
@@ -261,21 +265,16 @@ class GameEngine {
                 const drawn = drawCards(game.deck, 1);
                 if (drawn.length > 0) nextPlayer.hand.push(...drawn);
             }
-            nextPlayer.saidUno = false;
 
-            event = {
-                type: cardToPlay.value,
-                playerId,
-                targetPlayerId: nextPlayer.id,
-                cardsDrawn: cardsToDrawForNext,
-            };
+            // A penalidade muda a contagem da mão do próximo jogador
+            nextPlayer.saidUno = false;
         }
 
-        game.lastEvent = event;
-
+        // 3. Atualiza o turno
         game.turnIndex = this._getNextTurnIndex(game, stepsToAdvance);
         game.currentTurn = game.players[game.turnIndex].id;
 
+        // 4. Verifica condição de vitória (Hand Vazia)
         if (player.hand.length === 0) {
             game.status = "finished";
             game.winnerId = player.id;
@@ -285,6 +284,7 @@ class GameEngine {
 
         return game;
     }
+
     /**
      * Ação: O jogador declara "UNO" quando fica com exatamente 1 carta na mão.
      * Deve ser chamado como uma ação separada após jogar/comprar.
@@ -293,10 +293,10 @@ class GameEngine {
         const game = this._getActiveGameOrThrow(roomCode);
 
         const player = game.players.find((p) => p.id === playerId);
-        if (!player) throw new AppError("Jogador não encontrado na partida", 404);
+        if (!player) throw new AppError(`Player ${playerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
 
         if (player.hand.length !== 1) {
-            throw new AppError("Só é possível dizer UNO quando você tem exatamente 1 carta na mão", 400);
+            throw new AppError(`UNO can only be called with 1 card in hand; you have ${player.hand.length}`, 400, "INVALID_PAYLOAD");
         }
 
         player.saidUno = true;
@@ -313,13 +313,13 @@ class GameEngine {
         const game = this._getActiveGameOrThrow(roomCode);
 
         const challenger = game.players.find((p) => p.id === challengerId);
-        if (!challenger) throw new AppError("Jogador desafiante não encontrado na partida", 404);
+        if (!challenger) throw new AppError(`Challenger ${challengerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
 
         const challenged = game.players.find((p) => p.id === challengedId);
-        if (!challenged) throw new AppError("Jogador desafiado não encontrado na partida", 404);
+        if (!challenged) throw new AppError(`Challenged player ${challengedId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
 
         if (challenged.hand.length !== 1) {
-            throw new AppError("Não é possível desafiar: o jogador não está com uma única carta", 400);
+            throw new AppError(`Invalid challenge: ${challenged.name} holds ${challenged.hand.length} cards`, 400, "INVALID_PAYLOAD");
         }
 
         if (challenged.saidUno) {
@@ -349,7 +349,7 @@ class GameEngine {
         const game = this._getActiveGameOrThrow(roomCode);
 
         const player = game.players.find((p) => p.id === playerId);
-        if (!player) throw new AppError("Jogador não encontrado na partida", 404);
+        if (!player) throw new AppError(`Player ${playerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
 
         return player.hand.some((card) => canPlayCard(card, game.topCard, game.currentColor));
     }
@@ -359,10 +359,10 @@ class GameEngine {
      */
     getPlayerHand(roomCode, playerId) {
         const game = this.activeGames.get(roomCode);
-        if (!game) throw new AppError("Partida não encontrada", 404);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, "GAME_NOT_FOUND");
 
         const player = game.players.find((p) => p.id === playerId);
-        if (!player) throw new AppError("Jogador não encontrado na partida", 404);
+        if (!player) throw new AppError(`Player ${playerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
 
         return { roomCode, playerId, hand: player.hand };
     }
@@ -372,7 +372,7 @@ class GameEngine {
      */
     getHistory(roomCode) {
         const game = this.activeGames.get(roomCode);
-        if (!game) throw new AppError("Partida não encontrada", 404);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, "GAME_NOT_FOUND");
 
         return { roomCode, history: game.history || [] };
     }
@@ -383,7 +383,7 @@ class GameEngine {
      */
     getScores(roomCode) {
         const game = this.activeGames.get(roomCode);
-        if (!game) throw new AppError("Partida não encontrada", 404);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, "GAME_NOT_FOUND");
 
         if (game.status === "finished" && game.matchScores) {
             return { roomCode, scores: game.matchScores };

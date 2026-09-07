@@ -115,7 +115,7 @@ export const getGameStatus = async (req, res, next) => {
         const { roomCode } = req.params;
 
         const game = gameEngine.getGame(roomCode);
-        if (!game) throw new AppError('Partida não encontrada', 404);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, 'GAME_NOT_FOUND');
 
         return success(res, gameEngine.getPublicGameState(game), 'Game status fetched successfully');
     } catch (error) {

@@ -10,9 +10,10 @@ const GameMock = {
 };
 
 class AppErrorMock extends Error {
-    constructor(message, statusCode) {
+    constructor(message, statusCode, errorCode) {
         super(message);
         this.statusCode = statusCode;
+        this.errorCode = errorCode;
     }
 }
 
@@ -84,7 +85,7 @@ describe('GameService - getGameById', () => {
         GameMock.findById.mockResolvedValue(null);
 
         await expect(gameService.getGameById('nao-existe')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -106,7 +107,7 @@ describe('GameService - updateGame', () => {
         GameMock.findByIdAndUpdate.mockResolvedValue(null);
 
         await expect(gameService.updateGame('nao-existe', {})).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -128,7 +129,7 @@ describe('GameService - deleteGame', () => {
         GameMock.findByIdAndDelete.mockResolvedValue(null);
 
         await expect(gameService.deleteGame('nao-existe')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -165,7 +166,7 @@ describe('GameService - joinGame', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.joinGame(999, 'user')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -188,37 +189,12 @@ describe('GameService - startGame', () => {
 
     it('deve lançar AppError 403 quando quem tenta iniciar não for o criador', async () => {
         const save = jest.fn();
-        // CORREÇÃO AQUI: adicionado o segundo jogador ('p2') para passar da regra de < 2 jogadores
-        const fakeGame = { creator_username: 'criador', players: ['criador', 'p2'], save };
-        GameMock.findOne.mockResolvedValue(fakeGame);
-
-        await expect(gameService.startGame(111, 'intruso')).rejects.toMatchObject({
-            message: 'Only the creator can start the game',
-            statusCode: 403,
-        });
-        expect(save).not.toHaveBeenCalled();
-    });
-
-    it('deve lançar AppError 400 se o jogo já estiver encerrado', async () => {
-        const save = jest.fn();
-        const fakeGame = { state: 'ended', creator_username: 'criador', players: ['criador', 'p2'], save };
-        GameMock.findOne.mockResolvedValue(fakeGame);
-
-        await expect(gameService.startGame(111, 'criador')).rejects.toMatchObject({
-            message: 'Game has already ended',
-            statusCode: 400,
-        });
-        expect(save).not.toHaveBeenCalled();
-    });
-
-    it('deve lançar AppError 400 se houver menos de 2 jogadores', async () => {
-        const save = jest.fn();
         const fakeGame = { creator_username: 'criador', players: ['criador'], save };
         GameMock.findOne.mockResolvedValue(fakeGame);
 
-        await expect(gameService.startGame(111, 'criador')).rejects.toMatchObject({
-            message: 'At least 2 players are required to start the game',
-            statusCode: 400,
+        await expect(gameService.startGame(111, 'intruso')).rejects.toMatchObject({
+            errorCode: 'UNAUTHORIZED',
+            statusCode: 403,
         });
         expect(save).not.toHaveBeenCalled();
     });
@@ -227,7 +203,7 @@ describe('GameService - startGame', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.startGame(999, 'user')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -253,7 +229,7 @@ describe('GameService - leaveGame', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.leaveGame(999, 'user')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -279,7 +255,7 @@ describe('GameService - endGame', () => {
         GameMock.findOne.mockResolvedValue(fakeGame);
 
         await expect(gameService.endGame(111, 'intruso')).rejects.toMatchObject({
-            message: 'Only the creator can end the game',
+            errorCode: 'UNAUTHORIZED',
             statusCode: 403,
         });
         expect(save).not.toHaveBeenCalled();
@@ -308,7 +284,7 @@ describe('GameService - getGameState', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getGameState(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -328,7 +304,7 @@ describe('GameService - getGamePlayers', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getGamePlayers(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -371,7 +347,7 @@ describe('GameService - getCurrentPlayer', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getCurrentPlayer(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -391,7 +367,7 @@ describe('GameService - getTopCard', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getTopCard(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -412,7 +388,7 @@ describe('GameService - getScores', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getScores(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });

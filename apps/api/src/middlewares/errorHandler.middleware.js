@@ -32,13 +32,33 @@ export const errorHandler = (err, req, res, next) => {
     }
 
     if (err.name === 'ValidationError') {
-  return res.status(400).json({
-    error: {
-      code: 'VALIDATION_ERROR',
-      message: Object.values(err.errors).map(e => e.message).join(', '),
-    },
-  });
-}
+        return res.status(400).json({
+            error: {
+                code: 'VALIDATION_ERROR',
+                message: Object.values(err.errors).map(e => e.message).join(', '),
+            },
+        });
+    }
+
+    // Malformed ObjectId in the URL (e.g. /api/cards/abc)
+    if (err.name === 'CastError') {
+        return res.status(400).json({
+            error: {
+                code: 'INVALID_ID',
+                message: `The value provided for '${err.path}' is not a valid id`,
+            },
+        });
+    }
+
+    // Malformed JSON in the request body, thrown by express.json()
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({
+            error: {
+                code: 'INVALID_PAYLOAD',
+                message: 'Request body is not valid JSON',
+            },
+        });
+    }
 
     // Unexpected errors — never expose internals
     logger.error('Unhandled error', { error: err });
