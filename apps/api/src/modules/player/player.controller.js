@@ -33,13 +33,18 @@ export const updateMe = async (req, res, next) => {
 
 export const getStats = async (req, res, next) => {
   try {
+    const scores = await scoreService.getScoresByPlayerId(req.user.id);
+    const totalMatches = scores.length;
+    const wins = scores.filter(s => s.result === 'Victory').length;
+    const winRate = totalMatches > 0 ? ((wins / totalMatches) * 100).toFixed(1) : 0;
+
     const stats = {
-      totalMatches: 42,
-      wins: 15,
-      winRate: 35.7,
-      totalCardsPlayed: 1450,
-      totalCardsDrawn: 890,
-      timesShoutedUno: 22,
+      totalMatches,
+      wins,
+      winRate,
+      totalCardsPlayed: 0, // Pending feature implementation
+      totalCardsDrawn: 0,  // Pending feature implementation
+      timesShoutedUno: 0,  // Pending feature implementation
     };
     return success(res, { stats }, 'Player stats fetched successfully');
   } catch (error) {
