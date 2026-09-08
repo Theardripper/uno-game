@@ -1,10 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGame } from "@/store/game/use-game";
+import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/helpers/cn";
 
 export const PlayerSlot = ({ playerId, position = "top" }) => {
     const { players, currentTurn } = useGame();
+    const { catchUno } = useGameActions();
 
     const player = players.find(p => p.id === playerId);
 
@@ -64,6 +66,15 @@ export const PlayerSlot = ({ playerId, position = "top" }) => {
             <div className="bg-[#2A1B19]/80 backdrop-blur-md border border-white/5 text-white/90 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm max-w-28 truncate text-center">
                 {player.name}
             </div>
+
+            {player.cardCount === 1 && !player.saidUno && (
+                <button
+                    onClick={() => catchUno(player.id)}
+                    className="absolute -right-16 top-1/2 -translate-y-1/2 bg-[#C0000A] text-white text-[10px] font-black italic tracking-widest px-3 py-1.5 rounded-full shadow-lg border border-[#FF453A]/50 hover:scale-105 active:scale-95 transition-all z-10 animate-pulse"
+                >
+                    PEGAR!
+                </button>
+            )}
 
             {/* Mini Cartas traseiras */}
             <div className="flex gap-1 justify-center max-w-[120px] flex-wrap">

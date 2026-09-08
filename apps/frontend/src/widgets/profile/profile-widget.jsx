@@ -1,103 +1,83 @@
 "use client";
 
-import { useUserQuery } from "@/features/profile/model/use-profile";
-import { EditProfileForm } from "@/features/profile/ui/edit-profile-form";
+import React, { useState } from "react";
+import { useUserQuery, useProfileStatsQuery, useProfileHistoryQuery, useUpdateProfileMutation } from "@/features/profile/model/use-profile";
+import { ProfileBanner } from "@/features/profile/ui/profile-banner";
+import { ProfileStats } from "@/features/profile/ui/profile-stats";
+import { ProfileTrophies } from "@/features/profile/ui/profile-trophies";
+import { ProfileMatchSummary } from "@/features/profile/ui/profile-match-summary";
+import { ProfileMatchHistory } from "@/features/profile/ui/profile-match-history";
+import { EditProfileView } from "@/features/profile/ui/edit-profile-view";
 import { FadeIn } from "@/components/motion/fade-in";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export function ProfileWidget() {
-  const { data, isLoading, isError, refetch } = useUserQuery();
+    const { data: userData, isLoading: isUserLoading } = useUserQuery();
+    const { data: statsData, isLoading: isStatsLoading } = useProfileStatsQuery();
+    const { data: historyData, isLoading: isHistoryLoading } = useProfileHistoryQuery();
+    const updateProfileMutation = useUpdateProfileMutation();
 
-  if (isLoading) {
-    return (
-      <FadeIn className="w-full max-w-md mx-auto mt-12 p-6 bg-card rounded-xl shadow-sm border animate-pulse">
-        <div className="h-8 bg-muted rounded w-1/3 mb-6"></div>
-        <div className="space-y-4">
-          <div className="h-4 bg-muted rounded w-1/4"></div>
-          <div className="h-10 bg-muted rounded w-full"></div>
-          <div className="h-4 bg-muted rounded w-1/4"></div>
-          <div className="h-10 bg-muted rounded w-full"></div>
-          <div className="h-10 bg-muted rounded w-full mt-6"></div>
-        </div>
-      </FadeIn>
-    );
-  }
+    const [isEditing, setIsEditing] = useState(false);
 
-  if (isError) {
-    return (
-      <FadeIn className="w-full max-w-md mx-auto mt-12 p-6 bg-card rounded-xl shadow-sm border text-center">
-        <h2 className="text-xl font-bold text-destructive mb-4">Erro ao carregar perfil</h2>
-        <p className="text-muted-foreground mb-6">Não foi possível carregar as informações do seu perfil no momento.</p>
-        <Button onClick={() => refetch()} variant="secondary">Tentar Novamente</Button>
-      </FadeIn>
-    );
-  }
-
-  const user = data?.data?.player;
-
-  return (
-    <FadeIn className="w-full max-w-md mx-auto mt-12 p-6 bg-card rounded-xl shadow-sm border">
-      <h1 className="text-2xl font-bold mb-6 text-card-foreground">Meu Perfil</h1>
-      
-      {/* Exibição do Avatar Atual */}
-      <div className="flex justify-center mb-6">
-        {user?.avatarUrl ? (
-          <img 
-            src={user.avatarUrl} 
-            alt="Avatar do Usuário" 
-            className="w-32 h-32 rounded-full border-4 border-primary bg-muted shadow-sm"
-          />
-        ) : (
-          <div className="w-32 h-32 rounded-full border-4 border-primary bg-muted shadow-sm flex items-center justify-center text-muted-foreground text-sm font-medium">
-            Sem Avatar
-          </div>
-        )}
-      </div>
-
-      {/* Exibição de Nível e XP */}
-      {user && (
-        <div className="mb-8 p-5 bg-slate-50 border rounded-2xl shadow-sm text-center">
-          <div className="font-bold text-lg text-slate-800 mb-1">
-            Nível {user.level || 1}
-          </div>
-          
-          <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden mb-2">
-            <div 
-                className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" 
-                style={{ width: `${user.progressPercentage || 0}%` }}
-            />
-          </div>
-          
-          <div className="flex justify-between text-xs text-slate-500 font-medium px-1 mb-2">
-            <span>{user.currentLevelXp || 0} / {user.levelSize || 0} XP</span>
-            <span>Faltam {user.xpToNextLevel || 0} XP</span>
-          </div>
-
-          <div className="text-sm font-bold text-slate-600 bg-white inline-block px-3 py-1 rounded-full border shadow-sm">
-            Total: {user.xp || 0} XP
-          </div>
-
-          {/* Stats */}
-          {user.stats && (
-            <div className="mt-6 grid grid-cols-3 gap-2 border-t pt-4">
-              <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-slate-700">{user.stats.gamesPlayed}</span>
-                <span className="text-xs uppercase text-slate-500 tracking-wider">Partidas</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-green-600">{user.stats.wins}</span>
-                <span className="text-xs uppercase text-slate-500 tracking-wider">Vitórias</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-red-500">{user.stats.losses}</span>
-                <span className="text-xs uppercase text-slate-500 tracking-wider">Derrotas</span>
-              </div>
+    if (isUserLoading || isStatsLoading || isHistoryLoading) {
+        return (
+            <div className="p-8 h-full flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-t-white/80 border-white/20 rounded-full animate-spin"></div>
             </div>
-          )}
-        </div>
-      )}
+        );
+    }
 
-      <EditProfileForm defaultValues={user} />
-    </FadeIn>
-  );
+    const user = userData?.data?.player;
+    const stats = statsData?.data?.stats;
+    const history = historyData?.data?.history;
+
+    const handleSave = (updatedData) => {
+        updateProfileMutation.mutate(updatedData, {
+            onSuccess: () => {
+                setIsEditing(false);
+            }
+        });
+    };
+
+    return (
+        <div className="h-full bg-transparent flex flex-col p-6 overflow-y-auto w-full hide-scrollbar">
+            {/* Header */}
+            <div className="mb-8 flex items-center gap-4">
+                {isEditing && (
+                    <button 
+                        onClick={() => setIsEditing(false)}
+                        className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                )}
+                <h1 className="text-4xl font-bold text-white tracking-tight uppercase">Seu Perfil</h1>
+            </div>
+
+            <FadeIn>
+                {isEditing ? (
+                    <EditProfileView 
+                        profile={user} 
+                        onCancel={() => setIsEditing(false)} 
+                        onSave={handleSave} 
+                    />
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+                        {/* Main Column */}
+                        <div className="flex flex-col gap-8">
+                            <ProfileBanner profile={user} onEdit={() => setIsEditing(true)} />
+                            <ProfileMatchSummary stats={stats} />
+                        </div>
+
+                        {/* Sidebar Column */}
+                        <div className="flex flex-col gap-8">
+                            <ProfileStats />
+                            <ProfileTrophies />
+                            <ProfileMatchHistory history={history} />
+                        </div>
+                    </div>
+                )}
+            </FadeIn>
+        </div>
+    );
 }

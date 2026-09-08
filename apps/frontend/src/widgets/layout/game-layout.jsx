@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 export function GameLayout({ children }) {
   const pathname = usePathname();
   const isRoomOrGame = pathname?.startsWith('/room') || pathname?.startsWith('/game');
+  const isProfile = pathname?.startsWith('/profile');
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#1a100e] text-white">
@@ -28,7 +29,7 @@ export function GameLayout({ children }) {
         </div>
       </main>
 
-      {!isRoomOrGame && <RightSidebar />}
+      {!isRoomOrGame && !isProfile && <RightSidebar />}
     </div>
   );
 }

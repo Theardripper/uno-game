@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/auth/auth.store";
 import { onlineFriends } from "@/shared/mocks/home.mock";
 import { UserPlus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function RightSidebar() {
   const user = useAuthStore((state) => state.user);
@@ -18,7 +19,7 @@ export function RightSidebar() {
   return (
     <aside className="w-[300px] flex-shrink-0 hidden xl:flex flex-col h-full bg-[#1F1311] border-l border-white/5 p-6 space-y-8 overflow-y-auto custom-scrollbar">
       {/* Profile Card */}
-      <div className="bg-[#2A1B19] rounded-2xl p-4 border border-white/5">
+      <Link href="/profile" className="bg-[#2A1B19] rounded-2xl p-4 border border-white/5 hover:border-[#FF453A]/30 hover:bg-[#32201d] transition-all cursor-pointer block">
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-800">
@@ -52,7 +53,7 @@ export function RightSidebar() {
             />
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Friends List */}
       <div className="flex-1">
