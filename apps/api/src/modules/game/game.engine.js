@@ -300,8 +300,10 @@ class GameEngine {
             throw new AppError(`UNO can only be called with 1 card in hand; you have ${player.hand.length}`, 400, "INVALID_PAYLOAD");
         }
 
-        player.saidUno = true;
-        this._logHistory(game, playerId, "said_uno");
+        if (!player.saidUno) {
+            player.saidUno = true;
+            this._logHistory(game, playerId, "said_uno");
+        }
 
         return game;
     }

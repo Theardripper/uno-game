@@ -1,5 +1,19 @@
 import React from "react";
 import { Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+// Helper to format ISO date to time ago
+function getTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return "Agora mesmo";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min atrás`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} horas atrás`;
+    if (diffInSeconds < 172800) return "Ontem";
+    return `${Math.floor(diffInSeconds / 86400)} dias atrás`;
+}
 
 function HistoryItem({ match }) {
     const isVictory = match.result === "Victory";
@@ -17,32 +31,35 @@ function HistoryItem({ match }) {
                     </p>
                 </div>
             </div>
-            <p className="text-[10px] font-mono text-white/30 uppercase tracking-widest">{match.timeAgo}</p>
+            <p className="text-[10px] font-mono text-white/30 uppercase tracking-widest">{getTimeAgo(match.timeAgo)}</p>
         </div>
     );
 }
 
 export function ProfileMatchHistory({ history }) {
-    // Empty state se não tiver histórico
-    const displayHistory = history?.length > 0 ? history : [
-        { id: 1, result: "Victory", duration: "6:12", players: 3, timeAgo: "2 horas atrás" },
-        { id: 2, result: "Defeat", duration: "8:45", players: 4, timeAgo: "5 horas atrás" },
-        { id: 3, result: "Victory", duration: "5:30", players: 2, timeAgo: "Ontem" },
-        { id: 4, result: "Victory", duration: "5:30", players: 2, timeAgo: "Ontem" },
-    ];
+    const router = useRouter();
+    // Use the actual history or empty array
+    const displayHistory = history?.length > 0 ? history.slice(0, 4) : [];
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-white">Histórico</h2>
-                <button className="text-[10px] font-mono text-white/40 hover:text-white uppercase tracking-widest transition-colors">
+                <button 
+                    onClick={() => router.push("/profile/history")}
+                    className="text-[10px] font-mono text-white/40 hover:text-white uppercase tracking-widest transition-colors"
+                >
                     Ver todas
                 </button>
             </div>
             <div className="flex flex-col gap-3">
-                {displayHistory.map((match) => (
+                {displayHistory.length > 0 ? displayHistory.map((match) => (
                     <HistoryItem key={match.id} match={match} />
-                ))}
+                )) : (
+                    <div className="bg-[#1C1210] rounded-2xl p-6 border border-white/5 flex items-center justify-center">
+                        <p className="text-white/40 text-sm">Nenhuma partida encontrada.</p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -11,6 +11,7 @@ const initialState = {
     hostId: null,
     status: null,
     maxPlayers: 0,
+    isPrivate: true,
     players: [],
     playerDetails: [],
 };
@@ -85,6 +86,8 @@ export const useRoomStore = create((set) => ({
                 return {
                     ...initialState,
                     ...room,
+                    id: state.id || room.id,
+                    isPrivate: room.isPrivate !== undefined ? room.isPrivate : state.isPrivate,
                     playerDetails: newPlayerDetails || state.playerDetails || [],
                 };
             });

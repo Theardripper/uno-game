@@ -18,7 +18,7 @@ export function EditProfileView({ profile, onCancel, onSave }) {
     const [coverId, setCoverId] = useState(profile?.coverId || 1);
     
     // Some pre-defined seeds for selection
-    const AVATAR_SEEDS = [profile?.avatarSeed || "Felix", "Aneka", "Jude", "Leah", "Oliver"];
+    const AVATAR_SEEDS = Array.from(new Set([profile?.avatarSeed || "Felix", "Aneka", "Jude", "Leah", "Oliver"]));
 
     const isDirty = name !== profile?.name || bio !== (profile?.bio || "") || avatarSeed !== profile?.avatarSeed || coverId !== profile?.coverId;
 

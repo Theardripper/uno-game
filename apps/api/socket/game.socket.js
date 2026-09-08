@@ -4,6 +4,7 @@ import { GameEvents, SystemEvents } from "../../shared/socket/events.js";
 import { calculateXpEarned, getLevel } from "../../shared/utils/progression.js";
 import { gameEngine } from "../src/modules/game/game.engine.js";
 import Player from "../src/modules/player/player.model.js";
+import * as scoreService from "../src/modules/score/score.service.js";
 import Room from "../src/modules/room/room.model.js";
 import { broadcastGameState } from "./game.broadcaster.js";
 import { getRoom } from "./store/rooms.store.js";
@@ -85,6 +86,25 @@ export async function processGameFinishedWithRoomCode(io, game, roomCode) {
         const minutes = Math.floor(durationSeconds / 60);
         const seconds = (durationSeconds % 60).toString().padStart(2, '0');
         const formattedDuration = `${minutes}:${seconds}`;
+
+        // Salvar os scores no banco
+        for (const res of results) {
+            if (mongoose.isValidObjectId(res.playerId)) {
+                try {
+                    await scoreService.createScore({
+                        playerId: res.playerId,
+                        gameId: roomCode,
+                        score: res.score,
+                        result: res.isWinner ? (game.endReason === "PLAYER_LEFT" ? "WO" : "Victory") : "Defeat",
+                        duration: formattedDuration,
+                        playersCount: allPlayers.length,
+                        xpEarned: res.xpEarned,
+                    });
+                } catch (err) {
+                    console.error("[Game Socket] Error saving score:", err);
+                }
+            }
+        }
 
         const matchDetails = {
             duration: formattedDuration,

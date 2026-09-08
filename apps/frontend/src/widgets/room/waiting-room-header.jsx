@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { Users, Copy } from "lucide-react";
+import { Users, Copy, Lock, Globe2 } from "lucide-react";
 
-export function WaitingRoomHeader({ hostName, playerCount, maxPlayers, roomCode, onCopyCode }) {
+export function WaitingRoomHeader({ hostName, playerCount, maxPlayers, roomCode, isHost, isPrivate, onTogglePrivacy, onCopyCode }) {
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 w-full mb-8">
       <div>
@@ -13,7 +13,21 @@ export function WaitingRoomHeader({ hostName, playerCount, maxPlayers, roomCode,
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        {isHost && (
+          <button
+            onClick={onTogglePrivacy}
+            className="flex items-center gap-2 px-4 py-2 rounded-full font-mono font-medium text-sm transition-colors border border-white/10 text-white bg-[#1a100e] hover:bg-white/5"
+            title="Alternar entre Sala Privada e Pública"
+          >
+            {isPrivate ? (
+              <><Lock className="w-4 h-4 text-red-400" /> Privada</>
+            ) : (
+              <><Globe2 className="w-4 h-4 text-teal-400" /> Pública</>
+            )}
+          </button>
+        )}
+
         <Badge className="bg-[#1a100e] hover:bg-[#1a100e] text-white border border-white/10 px-4 py-2 gap-2 rounded-full font-mono font-medium text-sm">
           <Users className="w-4 h-4 text-gray-400" />
           {playerCount}/{maxPlayers} Jogadores

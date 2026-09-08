@@ -9,6 +9,7 @@ export function GameLayout({ children }) {
   const pathname = usePathname();
   const isRoomOrGame = pathname?.startsWith('/room') || pathname?.startsWith('/game');
   const isProfile = pathname?.startsWith('/profile');
+  const isHub = pathname?.startsWith('/hub');
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#1a100e] text-white">
@@ -29,7 +30,7 @@ export function GameLayout({ children }) {
         </div>
       </main>
 
-      {!isRoomOrGame && !isProfile && <RightSidebar />}
+      {!isRoomOrGame && !isProfile && !isHub && <RightSidebar />}
     </div>
   );
 }

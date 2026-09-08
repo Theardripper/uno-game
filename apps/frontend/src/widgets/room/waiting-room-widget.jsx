@@ -2,9 +2,11 @@ import { useAppToast } from "@/hooks/use-app-toast";
 import { Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { roomService } from "@/services/room.service";
 
 import { useWaitingRoom } from "@/features/room/hooks/use-waiting-room";
 import { useRoomActions } from "@/features/room/hooks/use-room-actions";
+import { useRoom } from "@/store/room/use-room";
 import { useGame } from "@/store/game/use-game";
 import { socketClient } from "@/socket/socket-client";
 import { SystemEvents } from "@shared/socket/events";
@@ -18,6 +20,7 @@ import { InviteFriends } from "./invite-friends";
 export function WaitingRoomWidget({ roomCode }) {
     const router = useRouter();
     const { error: toastError, success: toastSuccess } = useAppToast();
+    const { actions: { setRoom } } = useRoom();
 
     const {
         room,
@@ -61,6 +64,17 @@ export function WaitingRoomWidget({ roomCode }) {
 
     const hostName = room?.playerDetails?.find(p => p.id === room?.hostId)?.name;
 
+    const togglePrivacy = async () => {
+        try {
+            await roomService.updateRoom(room.id, { isPrivate: !room.isPrivate });
+            setRoom({ ...room, isPrivate: !room.isPrivate });
+            toastSuccess(`Sala agora é ${!room.isPrivate ? "Privada" : "Pública"}`, "Atualizado");
+        } catch (error) {
+            console.error("TOGGLE PRIVACY ERROR:", error);
+            toastError("Erro ao alterar privacidade da sala.", "Erro");
+        }
+    };
+
     const copyCode = () => {
         navigator.clipboard.writeText(roomCode);
         toastSuccess("Código da sala copiado para a área de transferência.", "Copiado!");
@@ -96,6 +110,9 @@ export function WaitingRoomWidget({ roomCode }) {
                 playerCount={room.playerDetails?.length || 0} 
                 maxPlayers={room.maxPlayers} 
                 roomCode={roomCode} 
+                isHost={isHost}
+                isPrivate={room.isPrivate}
+                onTogglePrivacy={togglePrivacy}
                 onCopyCode={copyCode} 
             />
 

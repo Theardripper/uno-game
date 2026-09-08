@@ -1,8 +1,12 @@
+"use client";
+
 import { CreateRoomButton } from "@/features/room/ui/create-room-button";
 import { JoinRoomForm } from "@/features/room/ui/join-room-form";
 import { PlusSquare, Key, Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function ActionCards() {
+  const router = useRouter();
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 flex-shrink-0">
       
@@ -41,7 +45,10 @@ export function ActionCards() {
           <h3 className="text-white font-bold text-lg mb-1">Salas públicas</h3>
         </div>
         <div className="mt-4">
-          <button className="w-full py-3.5 rounded-xl bg-[#2A1B19] hover:bg-[#322825] text-gray-300 font-bold uppercase tracking-wider text-sm transition-colors border border-white/5">
+          <button 
+            onClick={() => router.push("/hub/public-rooms")}
+            className="w-full py-3.5 rounded-xl bg-[#2A1B19] hover:bg-[#322825] text-gray-300 font-bold uppercase tracking-wider text-sm transition-colors border border-white/5"
+          >
             Browse
           </button>
         </div>

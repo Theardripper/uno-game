@@ -12,7 +12,7 @@ import { usePathname, useRouter } from "next/navigation";
 const NAV_ITEMS = [
   { icon: Home, label: "Home", href: "/lobby" },
   { icon: LayoutGrid, label: "Hub", href: "/hub" },
-  { icon: Clock, label: "Histórico", href: "/historico" },
+  { icon: Clock, label: "Histórico", href: "/profile/history" },
 ];
 
 const BOTTOM_NAV_ITEMS = [

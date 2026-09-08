@@ -1,5 +1,6 @@
 import { success } from "#shared/helpers/response.js";
 import * as playerService from "./player.service.js";
+import * as scoreService from "../score/score.service.js";
 
 export const createPlayer = async (req, res, next) => {
     try {
@@ -48,7 +49,25 @@ export const getStats = async (req, res, next) => {
 
 export const getHistory = async (req, res, next) => {
   try {
-    return success(res, { history: [] }, 'Player history fetched successfully');
+    const scores = await scoreService.getScoresByPlayerId(req.user.id);
+    
+    // Map the database scores to the format expected by the frontend
+    const history = scores.map((score, index) => {
+      // Calculate timeAgo roughly or just return the date for the frontend to handle
+      // We can use a simple timeAgo function or just return the ISO string
+      return {
+        id: score.id || score._id.toString(),
+        result: score.result,
+        duration: score.duration,
+        players: score.playersCount,
+        timeAgo: score.timestamp.toISOString(),
+        score: score.score,
+        xpEarned: score.xpEarned,
+        gameCode: score.gameId
+      };
+    });
+
+    return success(res, { history }, 'Player history fetched successfully');
   } catch (error) {
     next(error);
   }
