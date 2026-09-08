@@ -419,6 +419,7 @@ class GameEngine {
                 isConnected: p.isConnected,
                 saidUno: p.saidUno,
             })),
+            history: (game.history || []).slice(-20),
         };
 
         if (game.status === "finished") {

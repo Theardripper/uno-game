@@ -41,10 +41,11 @@ export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
                             exit={{ opacity: 0, y: -50, scale: 0.5 }}
                             whileHover={playable ? { y: translateY - 50, rotate: 0, zIndex: 100, scale: 1.15 } : {}}
                             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                            className={`absolute origin-bottom transition-shadow ${playable ? "cursor-pointer" : "cursor-not-allowed opacity-70 hover:opacity-100"}`}
+                            className={`absolute origin-bottom ${playable ? "cursor-pointer" : "cursor-not-allowed opacity-70 hover:opacity-100"}`}
                             style={{
                                 marginLeft: `${offset * spacing}px`,
-                                zIndex: index
+                                zIndex: index,
+                                willChange: "transform, opacity"
                             }}
                             onClick={() => playable && playCard(card)}
                         >

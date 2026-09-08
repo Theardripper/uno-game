@@ -5,16 +5,20 @@ import { onlineFriends } from "@/shared/mocks/home.mock";
 import { UserPlus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUserQuery } from "@/features/profile/model/use-profile";
 
 export function RightSidebar() {
-  const user = useAuthStore((state) => state.user);
-
-  // Fallback data if user is not loaded properly
-  const username = user?.username || user?.email?.split('@')[0] || "Player";
-  const userLevel = 24; // Mocked
-  const currentXP = 840; // Mocked
-  const maxXP = 1200; // Mocked
-  const progressPercent = (currentXP / maxXP) * 100;
+  const userAuth = useAuthStore((state) => state.user);
+  const { data: userData } = useUserQuery();
+  
+  // Real user data from API, fallback to auth store if loading
+  const user = userData?.data?.player || userAuth;
+  
+  const username = user?.name || user?.username || user?.email?.split('@')[0] || "Player";
+  const userLevel = user?.level || 1;
+  const currentXP = user?.currentLevelXp || 0;
+  const maxXP = (user?.currentLevelXp || 0) + (user?.xpToNextLevel || 100);
+  const progressPercent = user?.progressPercentage || 0;
 
   return (
     <aside className="w-[300px] flex-shrink-0 hidden xl:flex flex-col h-full bg-[#1F1311] border-l border-white/5 p-6 space-y-8 overflow-y-auto custom-scrollbar">
@@ -24,7 +28,7 @@ export function RightSidebar() {
           <div className="relative">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-800">
               <Image 
-                src={`https://api.dicebear.com/9.x/bottts/svg?seed=${username}`}
+                src={user?.avatarSeed?.startsWith("http") ? user.avatarSeed : `https://api.dicebear.com/9.x/bottts/svg?seed=${user?.avatarSeed || username}`}
                 alt="Avatar"
                 width={56}
                 height={56}

@@ -61,7 +61,7 @@ export const GameOverModal = ({ localPlayerId, onLeave, isLeaving }) => {
                         
                         <div className={cn("w-28 h-28 rounded-full border-[3px] shadow-2xl mb-5 overflow-hidden relative bg-[#2A1B19]", isLocalWinner ? "border-[#FF453A]" : "border-[#80D2FF]")}>
                             <img
-                                src={winner.avatarSeed?.startsWith("http") ? winner.avatarSeed : `https://api.dicebear.com/9.x/avataaars/svg?seed=${winner.avatarSeed || winner.name}`}
+                                src={winner.avatarSeed?.startsWith("http") ? winner.avatarSeed : `https://api.dicebear.com/9.x/bottts/svg?seed=${winner.avatarSeed || winner.name}`}
                                 alt={winner.name}
                                 className="w-full h-full object-cover"
                             />
@@ -107,7 +107,7 @@ export const GameOverModal = ({ localPlayerId, onLeave, isLeaving }) => {
                                 <div key={r.playerId} className={cn("flex items-center gap-3 p-2.5 rounded-xl transition-colors", r.playerId === localPlayerId ? "bg-[#351b1a] border border-[#FF5545]/20" : "")}>
                                     <span className="text-white/40 font-black text-sm w-4 text-center">{i + 1}</span>
                                     <div className="w-8 h-8 rounded-full bg-black/40 overflow-hidden shadow-inner">
-                                        <img src={r.avatarSeed?.startsWith("http") ? r.avatarSeed : `https://api.dicebear.com/9.x/avataaars/svg?seed=${r.avatarSeed || r.name}`} alt={r.name} className="w-full h-full object-cover" />
+                                        <img src={r.avatarSeed?.startsWith("http") ? r.avatarSeed : `https://api.dicebear.com/9.x/bottts/svg?seed=${r.avatarSeed || r.name}`} alt={r.name} className="w-full h-full object-cover" />
                                     </div>
                                     <span className={cn("font-semibold text-sm flex-1", r.playerId === localPlayerId ? "text-white" : "text-white/60")}>
                                         {r.playerId === localPlayerId ? "Você" : r.name}

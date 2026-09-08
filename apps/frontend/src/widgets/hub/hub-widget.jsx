@@ -55,7 +55,7 @@ export function HubWidget() {
           {user && (
             <Link href="/profile" className="block w-12 h-12 rounded-full bg-white/10 overflow-hidden border-2 border-white/10 hover:border-white/40 transition-colors shadow-lg">
               <img 
-                src={user.avatarUrl || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.avatarSeed || user.name || "Player"}`} 
+                src={user.avatarUrl || `https://api.dicebear.com/9.x/bottts/svg?seed=${user.avatarSeed || user.name || "Player"}`} 
                 alt="Avatar" 
                 className="w-full h-full object-cover" 
               />

@@ -86,7 +86,7 @@ export const getPublicRooms = async () => {
                 currentPlayers: room.players.length,
                 hostName: host.name,
                 hostTag: host.tag,
-                hostAvatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${host.avatar_seed}`
+                hostAvatar: `https://api.dicebear.com/9.x/bottts/svg?seed=${host.avatar_seed}`
             };
         });
 };

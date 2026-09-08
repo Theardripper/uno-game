@@ -30,6 +30,7 @@ import { GAME_CONSTANTS } from "@/constants/game.constants";
  * @property {'waiting'|'playing'|'finished'} status - Status geral do jogo
  * @property {'clockwise'|'counter_clockwise'} direction - Sentido de rotação dos turnos
  * @property {{id: string, playerId: string, playerName: string}|null} unoAnnouncement - Aviso ativo de "UNO!" pra mesa toda
+ * @property {Array} history - Log de ações recentes da partida
  */
 
 /** @type {GameState} */
@@ -47,6 +48,7 @@ const initialState = {
     endReason: null,
     matchResults: null,
     matchDetails: null,
+    history: [],
 };
 
 export const useGameStore = create(

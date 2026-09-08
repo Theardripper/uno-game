@@ -1,8 +1,9 @@
 import { UnoCard } from "@/components/ui/uno-card";
 import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGame } from "@/store/game/use-game";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { cn } from "@/helpers/cn";
+import { useEffect, useState, useRef } from "react";
 
 export const GameBoard = ({ myPlayerId }) => {
     const { topCard, currentColor, deckCount, currentTurn, direction } = useGame();
@@ -12,6 +13,41 @@ export const GameBoard = ({ myPlayerId }) => {
     const isClockwise = direction !== "counter_clockwise";
 
     const discardKey = topCard ? topCard.id : 'empty';
+
+    const [isSpeedingUp, setIsSpeedingUp] = useState(false);
+    const rotation = useMotionValue(0);
+    const lastTimeRef = useRef(0);
+    const requestRef = useRef();
+
+    useEffect(() => {
+        if (topCard) {
+            setIsSpeedingUp(true);
+            const timer = setTimeout(() => setIsSpeedingUp(false), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [topCard?.id]);
+
+    useEffect(() => {
+        // Normal: 15s/360deg = 24 deg/s. Speed up: 1s/360deg = 360 deg/s
+        const speed = isSpeedingUp ? 360 : 24;
+        const velocity = isClockwise ? speed : -speed;
+
+        const animateRotation = (time) => {
+            if (lastTimeRef.current != undefined) {
+                const delta = (time - lastTimeRef.current) / 1000;
+                // clamp delta to avoid huge jumps on tab switch
+                if (delta < 0.1) {
+                    rotation.set(rotation.get() + velocity * delta);
+                }
+            }
+            lastTimeRef.current = time;
+            requestRef.current = requestAnimationFrame(animateRotation);
+        }
+        
+        requestRef.current = requestAnimationFrame(animateRotation);
+        
+        return () => cancelAnimationFrame(requestRef.current);
+    }, [isSpeedingUp, isClockwise, rotation]);
 
     const colorMap = {
         red: "bg-[#FF453A]",
@@ -58,14 +94,10 @@ export const GameBoard = ({ myPlayerId }) => {
                     {/* Trilho de fundo sutil */}
                     <div className="w-[420px] h-[420px] rounded-full border border-white/5" />
 
-                    {/* Linhas com gradiente girando continuamente usando CSS puro para suportar reversão suave */}
-                    <div
-                        className="absolute w-[420px] h-[420px] animate-spin"
-                        style={{ 
-                            animationDuration: "15s", 
-                            animationTimingFunction: "linear",
-                            animationDirection: isClockwise ? "normal" : "reverse" 
-                        }}
+                    {/* Linhas com gradiente girando continuamente com motor de física (evita pulo no reverse) */}
+                    <motion.div
+                        className="absolute w-[420px] h-[420px]"
+                        style={{ rotate: rotation, willChange: "transform" }}
                     >
                         <svg viewBox="0 0 420 420" className="w-full h-full transform -rotate-45">
                             <defs>
@@ -95,7 +127,7 @@ export const GameBoard = ({ myPlayerId }) => {
                                 strokeLinecap="round" 
                             />
                         </svg>
-                    </div>
+                    </motion.div>
                 </div>
 
                 {/* Discard Pile (Pilha de Descarte) */}
@@ -111,6 +143,7 @@ export const GameBoard = ({ myPlayerId }) => {
                                 exit={{ opacity: 0, scale: 0.5, y: 50 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                 className="absolute inset-0 shadow-2xl"
+                                style={{ willChange: "transform, opacity" }}
                             >
                                 <UnoCard
                                     color={topCard.color}

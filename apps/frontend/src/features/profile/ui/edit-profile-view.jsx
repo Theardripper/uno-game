@@ -37,7 +37,7 @@ export function EditProfileView({ profile, onCancel, onSave }) {
         name,
         bio,
         avatarSeed,
-        avatarUrl: `https://api.dicebear.com/9.x/avataaars/svg?seed=${avatarSeed}`,
+        avatarUrl: `https://api.dicebear.com/9.x/bottts/svg?seed=${avatarSeed}`,
         coverId
     };
 
@@ -117,7 +117,7 @@ export function EditProfileView({ profile, onCancel, onSave }) {
                                     className={`relative shrink-0 w-24 h-24 rounded-2xl overflow-hidden transition-all duration-200 border-2 ${isSelected ? 'border-[#FF5545] shadow-[0_0_15px_rgba(255,85,69,0.2)]' : 'border-transparent hover:border-white/20'}`}
                                 >
                                     <div className="w-full h-full bg-white/10">
-                                        <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}`} alt="Avatar" className="w-full h-full object-cover" />
+                                        <img src={`https://api.dicebear.com/9.x/bottts/svg?seed=${seed}`} alt="Avatar" className="w-full h-full object-cover" />
                                     </div>
                                     {isSelected && (
                                         <div className="absolute top-1 right-1 bg-[#FF5545] text-white rounded-full p-0.5">

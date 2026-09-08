@@ -12,6 +12,7 @@ import { Hand } from "@/widgets/game/hand";
 import { HUD } from "@/widgets/game/hud";
 import { PlayerSlot } from "@/widgets/game/player-slot";
 import { UnoAnnouncement } from "@/widgets/game/uno-announcement";
+import { GameLog } from "@/widgets/game/game-log";
 import { Settings } from "lucide-react";
 import { useState } from "react";
 
@@ -51,8 +52,13 @@ export function GameView({ code }) {
             {/* Layout da Mesa (Grid) */}
             <div className="absolute inset-0 grid grid-rows-[1fr_3fr_1fr] grid-cols-[1fr_3fr_1fr] p-4 gap-4 pointer-events-none">
 
+                {/* Top-Left Section (Auditoria) - absolute to not stretch grid */}
+                <div className="absolute top-28 left-8 pointer-events-auto z-30">
+                    <GameLog />
+                </div>
+
                 {/* Top Section */}
-                <div className="col-start-2 row-start-1 flex items-start justify-center pt-8 pointer-events-auto">
+                <div className="col-start-2 row-start-1 flex items-start justify-center pt-8 pointer-events-auto z-20">
                     {topPlayer && <PlayerSlot playerId={topPlayer.id} position="top" />}
                 </div>
 

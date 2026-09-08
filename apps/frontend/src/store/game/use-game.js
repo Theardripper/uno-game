@@ -24,6 +24,7 @@ export const useGame = () => {
             endReason: state.endReason,
             matchResults: state.matchResults,
             matchDetails: state.matchDetails,
+            history: state.history,
             actions: state.actions,
         }))
     );

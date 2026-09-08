@@ -16,8 +16,8 @@ export const PlayerSlot = ({ playerId, position = "top" }) => {
     const isLocal = position === "bottom";
 
     const avatarUrl = player.avatarSeed
-        ? (player.avatarSeed.startsWith("http") ? player.avatarSeed : `https://api.dicebear.com/9.x/avataaars/svg?seed=${player.avatarSeed}`)
-        : "https://api.dicebear.com/9.x/avataaars/svg?seed=fallback";
+        ? (player.avatarSeed.startsWith("http") ? player.avatarSeed : `https://api.dicebear.com/9.x/bottts/svg?seed=${player.avatarSeed}`)
+        : "https://api.dicebear.com/9.x/bottts/svg?seed=fallback";
 
     if (isLocal) {
         return (
