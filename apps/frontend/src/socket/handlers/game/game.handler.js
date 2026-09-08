@@ -89,7 +89,8 @@ export function registerGameHandlers() {
             status: "finished",
             winnerId: data.winnerId,
             endReason: data.reason,
-            matchResults: data.results
+            matchResults: data.results,
+            matchDetails: data.matchDetails
         });
     };
 

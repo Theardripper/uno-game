@@ -84,6 +84,7 @@ class GameEngine {
             turnIndex: 0,
             removedPlayers: [],
             history: [],
+            startedAt: new Date(),
         };
 
         this.activeGames.set(roomCode, gameState);

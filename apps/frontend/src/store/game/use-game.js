@@ -23,6 +23,7 @@ export const useGame = () => {
             winnerId: state.winnerId,
             endReason: state.endReason,
             matchResults: state.matchResults,
+            matchDetails: state.matchDetails,
             actions: state.actions,
         }))
     );

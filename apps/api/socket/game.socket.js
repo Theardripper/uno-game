@@ -77,11 +77,27 @@ export async function processGameFinishedWithRoomCode(io, game, roomCode) {
             }
         }
 
+        const history = game.history || [];
+        const cardsPlayed = history.filter(h => h.action === "played_card").length;
+        const unosSaid = history.filter(h => h.action === "said_uno").length;
+        const durationSeconds = game.startedAt ? Math.floor((Date.now() - new Date(game.startedAt).getTime()) / 1000) : 0;
+        
+        const minutes = Math.floor(durationSeconds / 60);
+        const seconds = (durationSeconds % 60).toString().padStart(2, '0');
+        const formattedDuration = `${minutes}:${seconds}`;
+
+        const matchDetails = {
+            duration: formattedDuration,
+            cardsPlayed,
+            unosSaid,
+        };
+
         io.to(roomCode).emit(GameEvents.SERVER_GAME_FINISHED, {
             roomCode,
             winnerId: game.winnerId,
             reason: game.endReason,
             results,
+            matchDetails,
         });
 
         await Room.deleteOne({ code: roomCode });

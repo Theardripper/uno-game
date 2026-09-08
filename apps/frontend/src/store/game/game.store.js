@@ -46,6 +46,7 @@ const initialState = {
     winnerId: null,
     endReason: null,
     matchResults: null,
+    matchDetails: null,
 };
 
 export const useGameStore = create(
