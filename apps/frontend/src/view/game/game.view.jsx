@@ -40,10 +40,10 @@ export function GameView({ code }) {
     const rightPlayer = rotatedPlayers[3];
 
     return (
-        <div className="relative w-full h-dvh bg-auth-background overflow-hidden select-none flex flex-col font-sans">
+        <div className="relative w-full h-dvh overflow-hidden select-none flex flex-col font-sans">
 
-            {/* Fundo da Mesa (Radial Gradient para foco no centro) */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-auth-accent/15 via-auth-background to-auth-background pointer-events-none" />
+            {/* Fundo da Mesa (Radial Gradient Removido a pedido) */}
+            {/* <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-auth-accent/15 via-auth-background to-auth-background pointer-events-none" /> */}
 
             {/* HUD (Timer, UNO Button) */}
             <HUD myPlayerId={myPlayerId} />
@@ -57,7 +57,7 @@ export function GameView({ code }) {
                 </div>
 
                 {/* Left Section */}
-                <div className="col-start-1 row-start-2 flex items-center justify-start pl-8 pointer-events-auto">
+                <div className="col-start-1 row-start-2 flex items-center justify-start pl-8 md:pl-16 pointer-events-auto">
                     {leftPlayer && <PlayerSlot playerId={leftPlayer.id} position="left" />}
                 </div>
 
@@ -67,16 +67,18 @@ export function GameView({ code }) {
                 </div>
 
                 {/* Right Section */}
-                <div className="col-start-3 row-start-2 flex items-center justify-end pr-8 pointer-events-auto">
+                <div className="col-start-3 row-start-2 flex items-center justify-end pr-8 md:pr-16 pointer-events-auto">
                     {rightPlayer && <PlayerSlot playerId={rightPlayer.id} position="right" />}
                 </div>
 
-                {/* Bottom Section (Minha Mão) */}
+                {/* Bottom-Left Section (Minha Info) */}
+                <div className="col-start-1 row-start-3 flex items-end justify-start pl-8 pb-8 pointer-events-auto z-20">
+                    {bottomPlayer && <PlayerSlot playerId={bottomPlayer.id} position="bottom" />}
+                </div>
+
+                {/* Bottom-Center Section (Minha Mão) */}
                 <div className="col-start-2 row-start-3 flex flex-col items-center justify-end pb-4 pointer-events-auto z-20">
                     <Hand myPlayerId={myPlayerId} isPickingColor={isPickingColor} playCard={playCard} />
-                    <div className="mt-4">
-                        {bottomPlayer && <PlayerSlot playerId={bottomPlayer.id} position="bottom" />}
-                    </div>
                 </div>
             </div>
 
@@ -94,9 +96,9 @@ export function GameView({ code }) {
             />
 
             {/* Settings Button */}
-            <div className="absolute top-6 right-6 z-100 pointer-events-auto">
-                <Button variant="ghost" size="icon" className="bg-transparent text-white/60 border-transparent hover:bg-white/10 hover:text-white rounded-full w-10 h-10" onClick={() => setShowSettings(true)}>
-                    <Settings className="w-5 h-5" />
+            <div className="absolute top-8 right-8 z-100 pointer-events-auto">
+                <Button variant="ghost" size="icon" className="bg-[#2A1B19]/80 backdrop-blur-md text-white/60 hover:bg-[#3A2B29] hover:text-white rounded-full w-12 h-12 border border-white/5 shadow-lg" onClick={() => setShowSettings(true)}>
+                    <Settings className="w-6 h-6" />
                 </Button>
             </div>
 

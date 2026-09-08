@@ -9,23 +9,27 @@ export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
 
     if (!hand || hand.length === 0) return null;
 
+    // Quando não é a minha vez, as cartas descem um pouco (escondendo)
+    const baseTranslateY = isMyTurn ? 0 : 80;
+
     return (
-        <div className={`relative flex justify-center items-end h-48 w-full max-w-4xl mx-auto px- pb-8 ${isPickingColor ? "pointer-events-none" : ""}`}>
+        <div className={`relative flex justify-center items-end h-56 w-full max-w-5xl mx-auto pb-4 transition-transform duration-700 ${isPickingColor ? "pointer-events-none" : ""}`}>
             <AnimatePresence>
                 {hand.map((card, index) => {
                     const offset = index - (hand.length - 1) / 2;
 
-                    // Se houver muitas cartas, reduzimos o arco e o espaçamento
-                    const maxRotation = Math.max(1, 15 - hand.length);
+                    // Curva mais suave (menos rotação que antes para não ficar bagunçado)
+                    const maxRotation = Math.max(1, 12 - hand.length);
                     const rotate = offset * maxRotation;
 
-                    const maxTranslateY = Math.max(1, 5 - hand.length / 2);
-                    const translateY = Math.abs(offset) * maxTranslateY;
+                    // Ajuste na parábola (translateY)
+                    const maxArchY = Math.max(1, 3 - hand.length / 4);
+                    const archY = Math.abs(offset * offset) * maxArchY;
 
-                    // Espaçamento dinâmico para evitar que ultrapasse a tela
-                    const spacing = Math.min(120, 800 / hand.length);
-                    // isPlayable só compara a carta com o topo; sem isMyTurn, cartas
-                    // compatíveis ficavam clicáveis fora da vez e o servidor rejeitava.
+                    const translateY = baseTranslateY + archY;
+
+                    // Espaçamento dinâmico
+                    const spacing = Math.min(100, 700 / hand.length);
                     const playable = isMyTurn && isPlayable(card, topCard, currentColor);
 
                     return (
@@ -35,9 +39,9 @@ export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
                             initial={{ opacity: 0, y: 150 }}
                             animate={{ opacity: 1, y: translateY, rotate }}
                             exit={{ opacity: 0, y: -50, scale: 0.5 }}
-                            whileHover={playable ? { y: -40, rotate: 0, zIndex: 100, scale: 1.1 } : {}}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                            className={`absolute origin-bottom transition-shadow ${playable ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                            whileHover={playable ? { y: translateY - 50, rotate: 0, zIndex: 100, scale: 1.15 } : {}}
+                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                            className={`absolute origin-bottom transition-shadow ${playable ? "cursor-pointer" : "cursor-not-allowed opacity-70 hover:opacity-100"}`}
                             style={{
                                 marginLeft: `${offset * spacing}px`,
                                 zIndex: index
@@ -48,7 +52,7 @@ export const Hand = ({ myPlayerId, isPickingColor = false, playCard }) => {
                                 color={card.color}
                                 value={card.value}
                                 type={card.type || card.value}
-                                className="w-24 h-36 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_20px_50px_rgb(0,0,0,0.8)]"
+                                className="w-28 h-40 md:w-32 md:h-48 rounded-xl md:rounded-2xl border-4 border-white shadow-[0_10px_30px_rgb(0,0,0,0.6)] hover:shadow-[0_20px_50px_rgb(0,0,0,0.9)] transition-shadow"
                             />
                         </motion.div>
                     );
