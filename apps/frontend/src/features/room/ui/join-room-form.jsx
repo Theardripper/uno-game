@@ -48,8 +48,9 @@ export function JoinRoomForm() {
       <Button
         type="submit"
         disabled={isLoading || !code.trim()}
-        size="lg"
-        className="h-14 px-8"
+        variant="accent"
+        size="xl"
+        className="px-8"
       >
         {isLoading ? "..." : <ArrowRight className="h-5 w-5" />}
       </Button>

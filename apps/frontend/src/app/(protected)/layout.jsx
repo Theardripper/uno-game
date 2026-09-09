@@ -1,10 +1,9 @@
-import { Header } from "@/components/layout/header";
+import { GameLayout } from "@/widgets/layout/game-layout";
 
 export default function Layout({ children }) {
     return (
-        <>
-            <Header />
+        <GameLayout>
             {children}
-        </>
+        </GameLayout>
     );
 }

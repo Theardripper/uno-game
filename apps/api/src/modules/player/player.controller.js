@@ -1,5 +1,6 @@
 import { success } from "#shared/helpers/response.js";
 import * as playerService from "./player.service.js";
+import * as scoreService from "../score/score.service.js";
 
 export const createPlayer = async (req, res, next) => {
     try {
@@ -32,13 +33,18 @@ export const updateMe = async (req, res, next) => {
 
 export const getStats = async (req, res, next) => {
   try {
+    const scores = await scoreService.getScoresByPlayerId(req.user.id);
+    const totalMatches = scores.length;
+    const wins = scores.filter(s => s.result === 'Victory').length;
+    const winRate = totalMatches > 0 ? ((wins / totalMatches) * 100).toFixed(1) : 0;
+
     const stats = {
-      totalMatches: 42,
-      wins: 15,
-      winRate: 35.7,
-      totalCardsPlayed: 1450,
-      totalCardsDrawn: 890,
-      timesShoutedUno: 22,
+      totalMatches,
+      wins,
+      winRate,
+      totalCardsPlayed: 0, // Pending feature implementation
+      totalCardsDrawn: 0,  // Pending feature implementation
+      timesShoutedUno: 0,  // Pending feature implementation
     };
     return success(res, { stats }, 'Player stats fetched successfully');
   } catch (error) {
@@ -48,7 +54,25 @@ export const getStats = async (req, res, next) => {
 
 export const getHistory = async (req, res, next) => {
   try {
-    return success(res, { history: [] }, 'Player history fetched successfully');
+    const scores = await scoreService.getScoresByPlayerId(req.user.id);
+    
+    // Map the database scores to the format expected by the frontend
+    const history = scores.map((score, index) => {
+      // Calculate timeAgo roughly or just return the date for the frontend to handle
+      // We can use a simple timeAgo function or just return the ISO string
+      return {
+        id: score.id || score._id.toString(),
+        result: score.result,
+        duration: score.duration,
+        players: score.playersCount,
+        timeAgo: score.timestamp.toISOString(),
+        score: score.score,
+        xpEarned: score.xpEarned,
+        gameCode: score.gameId
+      };
+    });
+
+    return success(res, { history }, 'Player history fetched successfully');
   } catch (error) {
     next(error);
   }

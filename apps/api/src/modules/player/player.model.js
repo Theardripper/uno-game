@@ -137,7 +137,7 @@ playerSchema.methods.toPublicJSON = function () {
         tag: this.tag,
         email: this.email,
         avatarSeed: this.avatar_seed,
-        avatarUrl: `https://api.dicebear.com/9.x/avataaars/svg?seed=${this.avatar_seed}`,
+        avatarUrl: `https://api.dicebear.com/9.x/bottts/svg?seed=${this.avatar_seed}`,
         coverId: this.cover_id,
         bio: this.bio,
         level: progress.level,

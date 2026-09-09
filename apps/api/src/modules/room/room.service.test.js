@@ -46,7 +46,7 @@ describe('RoomService - createRoom', () => {
 
         const calledWith = RoomMock.create.mock.calls[0][0];
         expect(calledWith.maxPlayers).toBe(4);
-        expect(calledWith.isPrivate).toBe(false);
+        expect(calledWith.isPrivate).toBe(true);
         expect(calledWith.password).toBeNull();
     });
 
@@ -119,7 +119,7 @@ describe('RoomService - validateRoomCode', () => {
 // ===================== getRoomByCode =====================
 describe('RoomService - getRoomByCode', () => {
     it('deve devolver a sala com os detalhes formatados dos jogadores', async () => {
-        const fakeRoom = { code: 'UNO-A1B2', players: ['p1'] };
+        const fakeRoom = { _id: 'r1', code: 'UNO-A1B2', players: ['p1'] };
         RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue(fakeRoom) });
         PlayerMock.find.mockResolvedValue([
             { _id: 'p1', name: 'João', tag: '1234', avatar_seed: 'abc', level: 3 },
@@ -149,7 +149,7 @@ describe('RoomService - getRoomByCode', () => {
     });
 
     it('deve devolver uma lista vazia de detalhes quando a sala não tiver jogadores', async () => {
-        RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: [] }) });
+        RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: [] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         const result = await roomService.getRoomByCode('UNO-A1B2');
@@ -290,7 +290,7 @@ describe('RoomService - leaveRoom', () => {
         const fakeRoom = { code: 'UNO-A1B2', hostId: 'u1', players: ['u1', 'u2'], save };
         RoomMock.findOne
             .mockResolvedValueOnce(fakeRoom)
-            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: ['u1'] }) });
+            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: ['u1'] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         await roomService.leaveRoom('UNO-A1B2', 'u2');
@@ -304,7 +304,7 @@ describe('RoomService - leaveRoom', () => {
         const fakeRoom = { code: 'UNO-A1B2', hostId: 'u1', players: ['u1', 'u2'], save };
         RoomMock.findOne
             .mockResolvedValueOnce(fakeRoom)
-            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: ['u2'] }) });
+            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: ['u2'] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         await roomService.leaveRoom('UNO-A1B2', 'u1');
@@ -338,7 +338,7 @@ describe('RoomService - leaveRoom', () => {
         const save = jest.fn();
         RoomMock.findOne
             .mockResolvedValueOnce({ code: 'UNO-A1B2', hostId: 'u1', players: ['u1'], save })
-            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: ['u1'] }) });
+            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: ['u1'] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         await roomService.leaveRoom('UNO-A1B2', 'u999');

@@ -15,7 +15,7 @@ export const createRoom = async (hostId, data) => {
         code: generateCode(),
         hostId,
         maxPlayers: data.maxPlayers || 4,
-        isPrivate: data.isPrivate || false,
+        isPrivate: data.isPrivate !== undefined ? data.isPrivate : true,
         password: data.password || null,
         players: [hostId],
     });
@@ -59,7 +59,36 @@ export const getRoomByCode = async (code) => {
         ready: room.readyPlayers ? room.readyPlayers.includes(p._id.toString()) : false
     }));
 
+    room.id = room._id.toString();
     return room;
+};
+
+export const getPublicRooms = async () => {
+    const rooms = await Room.find({ isPrivate: false, status: "waiting" }).lean();
+    
+    // Fetch player details for hosts
+    const hostIds = rooms.map(r => r.hostId);
+    const Player = (await import("../player/player.model.js")).default;
+    const hosts = await Player.find({ _id: { $in: hostIds } }).lean();
+    
+    const hostMap = hosts.reduce((acc, h) => {
+        acc[h._id.toString()] = h;
+        return acc;
+    }, {});
+
+    return rooms
+        .filter(room => hostMap[room.hostId]) // Ignora salas órfãs de contas apagadas/inexistentes
+        .map(room => {
+            const host = hostMap[room.hostId];
+            return {
+                ...room,
+                id: room._id.toString(),
+                currentPlayers: room.players.length,
+                hostName: host.name,
+                hostTag: host.tag,
+                hostAvatar: `https://api.dicebear.com/9.x/bottts/svg?seed=${host.avatar_seed}`
+            };
+        });
 };
 
 export const joinRoom = async (code, playerId) => {

@@ -84,6 +84,7 @@ class GameEngine {
             turnIndex: 0,
             removedPlayers: [],
             history: [],
+            startedAt: new Date(),
         };
 
         this.activeGames.set(roomCode, gameState);
@@ -235,11 +236,10 @@ class GameEngine {
 
         switch (cardToPlay.value) {
             case "reverse":
+                game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 // Se tiver apenas 2 jogadores, reverse funciona como skip
                 if (game.players.length === 2) {
                     stepsToAdvance = 2;
-                } else {
-                    game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 }
                 break;
             case "skip":
@@ -299,8 +299,10 @@ class GameEngine {
             throw new AppError(`UNO can only be called with 1 card in hand; you have ${player.hand.length}`, 400, "INVALID_PAYLOAD");
         }
 
-        player.saidUno = true;
-        this._logHistory(game, playerId, "said_uno");
+        if (!player.saidUno) {
+            player.saidUno = true;
+            this._logHistory(game, playerId, "said_uno");
+        }
 
         return game;
     }
@@ -416,6 +418,7 @@ class GameEngine {
                 isConnected: p.isConnected,
                 saidUno: p.saidUno,
             })),
+            history: (game.history || []).slice(-20),
         };
 
         if (game.status === "finished") {

@@ -13,8 +13,13 @@ const playerServiceMock = {
     deletePlayer: jest.fn(),
 };
 
+const scoreServiceMock = {
+    getScoresByPlayerId: jest.fn(),
+};
+
 jest.unstable_mockModule('#shared/helpers/response.js', () => responseHelperMock);
 jest.unstable_mockModule('./player.service.js', () => playerServiceMock);
+jest.unstable_mockModule('../score/score.service.js', () => scoreServiceMock);
 
 // Import dinâmico DEPOIS de registrar os mocks (obrigatório em ESM)
 const {
@@ -29,6 +34,7 @@ const {
 } = await import('./player.controller.js');
 const { success } = await import('#shared/helpers/response.js');
 const playerService = await import('./player.service.js');
+const scoreService = await import('../score/score.service.js');
 
 describe('Player Controller', () => {
     let req, res, next;
@@ -170,15 +176,20 @@ describe('Player Controller', () => {
        getStats
        ========================================================================= */
     describe('getStats', () => {
-        it('deve retornar as estatísticas fixas do jogador com status 200 via helper success', async () => {
+        it('deve retornar as estatísticas calculadas do jogador com status 200 via helper success', async () => {
             const expectedStats = {
-                totalMatches: 42,
-                wins: 15,
-                winRate: 35.7,
-                totalCardsPlayed: 1450,
-                totalCardsDrawn: 890,
-                timesShoutedUno: 22,
+                totalMatches: 2,
+                wins: 1,
+                winRate: "50.0",
+                totalCardsPlayed: 0,
+                totalCardsDrawn: 0,
+                timesShoutedUno: 0,
             };
+
+            scoreService.getScoresByPlayerId.mockResolvedValue([
+                { result: 'Victory' },
+                { result: 'Defeat' }
+            ]);
 
             await getStats(req, res, next);
 
@@ -188,9 +199,7 @@ describe('Player Controller', () => {
 
         it('deve chamar next(error) caso ocorra uma exceção inesperada', async () => {
             const mockError = new Error('Erro inesperado');
-            success.mockImplementationOnce(() => {
-                throw mockError;
-            });
+            scoreService.getScoresByPlayerId.mockRejectedValue(mockError);
 
             await getStats(req, res, next);
 
@@ -203,6 +212,7 @@ describe('Player Controller', () => {
        ========================================================================= */
     describe('getHistory', () => {
         it('deve retornar o histórico vazio do jogador com status 200 via helper success', async () => {
+            scoreService.getScoresByPlayerId.mockResolvedValue([]);
             await getHistory(req, res, next);
 
             expect(success).toHaveBeenCalledWith(res, { history: [] }, 'Player history fetched successfully');
@@ -211,9 +221,7 @@ describe('Player Controller', () => {
 
         it('deve chamar next(error) caso ocorra uma exceção inesperada', async () => {
             const mockError = new Error('Erro inesperado');
-            success.mockImplementationOnce(() => {
-                throw mockError;
-            });
+            scoreService.getScoresByPlayerId.mockRejectedValue(mockError);
 
             await getHistory(req, res, next);
 

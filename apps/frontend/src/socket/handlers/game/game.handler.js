@@ -32,6 +32,8 @@ export function registerGameHandlers() {
         // SERVER_GAME_EVENT ainda não é emitido pelo backend.
         // Assim que o backend implementar a emissão do SERVER_GAME_EVENT (conforme contrato),
         // essa lógica deve ser removida por segurança, passando a ouvir o evento oficial do backend.
+        console.log("RECEBIDO DO SOCKET:", state.history);
+
         if (state.topCard?.id && state.topCard.id !== prevTopCardId) {
             if (skipNextTopCardToast) {
                 skipNextTopCardToast = false;
@@ -67,6 +69,7 @@ export function registerGameHandlers() {
             deckCount: state.deckCount,
             players: state.players,
             direction: state.direction ?? "clockwise",
+            ...(state.history ? { history: state.history } : {}),
             ...(state.winnerId !== undefined ? { winnerId: state.winnerId } : {}),
             ...(state.endReason !== undefined ? { endReason: state.endReason } : {})
         });
@@ -89,7 +92,8 @@ export function registerGameHandlers() {
             status: "finished",
             winnerId: data.winnerId,
             endReason: data.reason,
-            matchResults: data.results
+            matchResults: data.results,
+            matchDetails: data.matchDetails
         });
     };
 
