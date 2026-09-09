@@ -15,6 +15,7 @@ export function useRoom() {
             hostId: state.hostId,
             status: state.status,
             maxPlayers: state.maxPlayers,
+            isPrivate: state.isPrivate,
             players: state.players,
             playerDetails: state.playerDetails,
             actions: state.actions,

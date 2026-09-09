@@ -10,6 +10,15 @@ export const createRoom = async (req, res, next) => {
     }
 };
 
+export const getPublicRooms = async (req, res, next) => {
+    try {
+        const rooms = await roomService.getPublicRooms();
+        return success(res, { rooms }, 'Salas públicas recuperadas com sucesso', 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const validateRoomCode = async (req, res, next) => {
     try {
         const room = await roomService.validateRoomCode(req.params.code);

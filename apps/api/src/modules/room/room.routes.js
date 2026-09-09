@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/", extractUser, roomController.createRoom);
 router.post("/join", extractUser, roomController.joinRoom);
+router.get("/public", extractUser, roomController.getPublicRooms);
 router.get("/:code", extractUser, roomController.getRoomByCode);
 router.get("/validate/:code", extractUser, roomController.validateRoomCode);
 router.patch("/:id", extractUser, roomController.updateRoom);

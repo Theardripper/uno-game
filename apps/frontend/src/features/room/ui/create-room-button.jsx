@@ -34,8 +34,10 @@ export function CreateRoomButton() {
     <Button
       onClick={handleCreateRoom}
       disabled={isLoading}
-      size="lg"
-      className="w-full text-lg h-14"
+      variant="accent"
+      size="xl"
+      fullWidth
+      className="text-lg uppercase tracking-wide"
     >
       {isLoading ? (
         "Criando..."

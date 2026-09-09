@@ -1,150 +1,202 @@
 import { UnoCard } from "@/components/ui/uno-card";
 import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { useGame } from "@/store/game/use-game";
-import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, RotateCw } from "lucide-react";
+import { AnimatePresence, motion, useMotionValue } from "framer-motion";
+import { cn } from "@/helpers/cn";
+import { useEffect, useState, useRef } from "react";
 
-/**
- * GameBoard representa a mesa central do jogo de UNO.
- * Ele consome o estado global do jogo para renderizar:
- * - A pilha de descarte (com a carta do topo)
- * - O deck de compras (clicável só no turno do jogador local)
- * - A cor atual
- * - O sentido de rotação dos turnos
- *
- * @param {{ myPlayerId: string }} props
- */
 export const GameBoard = ({ myPlayerId }) => {
     const { topCard, currentColor, deckCount, currentTurn, direction } = useGame();
     const { drawCard } = useGameActions();
 
     const isMyTurn = currentTurn === myPlayerId;
+    const isClockwise = direction !== "counter_clockwise";
 
-    // O id da carta (não cor/valor) garante que cartas repetidas (ex: dois "amarelo 5"
-    // seguidos) sejam tratadas como itens distintos pelo AnimatePresence, e é o mesmo
-    // id usado como layoutId em hand.jsx — é o que permite a animação de "voo".
     const discardKey = topCard ? topCard.id : 'empty';
 
+    const [isSpeedingUp, setIsSpeedingUp] = useState(false);
+    const rotation = useMotionValue(0);
+    const lastTimeRef = useRef(0);
+    const requestRef = useRef();
+
+    useEffect(() => {
+        if (topCard) {
+            setIsSpeedingUp(true);
+            const timer = setTimeout(() => setIsSpeedingUp(false), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [topCard?.id]);
+
+    useEffect(() => {
+        // Normal: 15s/360deg = 24 deg/s. Speed up: 1s/360deg = 360 deg/s
+        const speed = isSpeedingUp ? 360 : 24;
+        const velocity = isClockwise ? speed : -speed;
+
+        const animateRotation = (time) => {
+            if (lastTimeRef.current != undefined) {
+                const delta = (time - lastTimeRef.current) / 1000;
+                // clamp delta to avoid huge jumps on tab switch
+                if (delta < 0.1) {
+                    rotation.set(rotation.get() + velocity * delta);
+                }
+            }
+            lastTimeRef.current = time;
+            requestRef.current = requestAnimationFrame(animateRotation);
+        }
+        
+        requestRef.current = requestAnimationFrame(animateRotation);
+        
+        return () => cancelAnimationFrame(requestRef.current);
+    }, [isSpeedingUp, isClockwise, rotation]);
+
     const colorMap = {
-        red: "bg-red-500",
-        blue: "bg-blue-500",
-        green: "bg-green-500",
-        yellow: "bg-yellow-500",
-        wild: "bg-gray-800"
+        red: "bg-[#FF453A]",
+        blue: "bg-[#0A84FF]",
+        green: "bg-[#30D158]",
+        yellow: "bg-[#FFD60A]",
+        wild: "bg-white/20"
     };
 
     const displayColor = currentColor || topCard?.color || "wild";
-    const isClockwise = direction !== "counter_clockwise";
+    const glowColor = colorMap[displayColor];
 
     return (
         <div className="flex flex-col items-center justify-center h-full w-full relative gap-6">
 
             {/* Mesa Central */}
-            <div className="relative flex items-center justify-center gap-8 p-16">
+            <div className="relative flex items-center justify-center gap-6 md:gap-10 p-20 scale-110">
 
-                {/* Anel decorativo ao redor das cartas */}
+                {/* Efeitos de fundo e Anel Giratório */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-90 h-90 rounded-full border border-auth-accent/20" />
+                    
+                    {/* Brilho intenso no centro se for o meu turno */}
+                    <AnimatePresence>
+                        {isMyTurn && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 0.4, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.5 }}
+                                className={cn("absolute w-80 h-80 rounded-full blur-3xl", glowColor)}
+                            />
+                        )}
+                    </AnimatePresence>
+                    
+                    {/* Brilho suave da carta atual no fundo */}
                     <motion.div
                         key={displayColor}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 0.2 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.15 }}
                         transition={{ duration: 0.5 }}
-                        className={`absolute w-72 h-72 rounded-full blur-3xl ${colorMap[displayColor] || "bg-gray-500"}`}
+                        className={cn("absolute w-80 h-80 rounded-full blur-3xl", glowColor)}
                     />
+
+                    {/* Trilho de fundo sutil */}
+                    <div className="w-[420px] h-[420px] rounded-full border border-white/5" />
+
+                    {/* Linhas com gradiente girando continuamente com motor de física (evita pulo no reverse) */}
+                    <motion.div
+                        className="absolute w-[420px] h-[420px]"
+                        style={{ rotate: rotation, willChange: "transform" }}
+                    >
+                        <svg viewBox="0 0 420 420" className="w-full h-full transform -rotate-45">
+                            <defs>
+                                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="white" stopOpacity="0.8" />
+                                    <stop offset="100%" stopColor="white" stopOpacity="0" />
+                                </linearGradient>
+                                <linearGradient id="grad2" x1="100%" y1="100%" x2="0%" y2="0%">
+                                    <stop offset="0%" stopColor="white" stopOpacity="0.8" />
+                                    <stop offset="100%" stopColor="white" stopOpacity="0" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <path 
+                                d="M 210 10 A 200 200 0 0 1 410 210" 
+                                fill="none" 
+                                stroke="url(#grad1)" 
+                                strokeWidth="8" 
+                                strokeLinecap="round" 
+                            />
+                            
+                            <path 
+                                d="M 210 410 A 200 200 0 0 1 10 210" 
+                                fill="none" 
+                                stroke="url(#grad2)" 
+                                strokeWidth="8" 
+                                strokeLinecap="round" 
+                            />
+                        </svg>
+                    </motion.div>
                 </div>
 
-                {/* Indicador de direção — animado quando muda */}
-                <motion.div
-                    key={direction}
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/10"
-                >
-                    <motion.div
-                        animate={{ rotate: isClockwise ? 0 : 180 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 18 }}
-                    >
-                        {isClockwise
-                            ? <RotateCw className="w-3.5 h-3.5 text-white/70" />
-                            : <RotateCcw className="w-3.5 h-3.5 text-white/70" />
-                        }
-                    </motion.div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">
-                        {isClockwise ? "Horário" : "Anti-horário"}
-                    </span>
-                </motion.div>
-
                 {/* Discard Pile (Pilha de Descarte) */}
-                <div className="relative w-24 h-36 z-10">
+                <div className="relative w-[130px] h-[190px] md:w-[150px] md:h-[220px] z-10 transform -rotate-6">
                     {topCard ? (
                         <AnimatePresence mode="popLayout">
                             <motion.div
                                 key={`discard-${discardKey}`}
                                 layoutId={`card-${topCard.id}`}
-                                initial={{ opacity: 0, scale: 0.5, y: -50, rotate: -15 }}
+                                initial={{ opacity: 0, scale: 0.5, y: -50, rotate: -30 }}
                                 // eslint-disable-next-line react-hooks/purity
-                                animate={{ opacity: 1, scale: 1, y: 0, rotate: Math.random() * 10 - 5 }}
+                                animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
                                 exit={{ opacity: 0, scale: 0.5, y: 50 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                className="absolute inset-0 shadow-xl shadow-black/50"
+                                className="absolute inset-0 shadow-2xl"
+                                style={{ willChange: "transform, opacity" }}
                             >
                                 <UnoCard
                                     color={topCard.color}
                                     type={topCard.type}
                                     value={topCard.value}
-                                    className="w-full h-full"
+                                    className="w-full h-full rounded-2xl border-4 border-white"
                                 />
                             </motion.div>
                         </AnimatePresence>
                     ) : (
-                        <div className="w-full h-full border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center">
-                            <span className="text-white/40 text-xs">Vazio</span>
+                        <div className="w-full h-full border-2 border-dashed border-white/20 rounded-2xl flex items-center justify-center">
+                            <span className="text-white/40 text-xs font-(family-name:--font-rubik)">Vazio</span>
                         </div>
                     )}
                 </div>
 
-                {/* Draw Pile (Deck de Compras) — clicável só no turno do jogador local */}
-                <div className="flex flex-col items-center gap-2 z-10">
-                    <div className="relative">
+                {/* Draw Pile (Deck de Compras) */}
+                <div className="flex flex-col items-center gap-3 z-10">
+                    <div className="relative transform rotate-6 hover:rotate-8 transition-transform">
                         {/* Simula um monte de cartas */}
-                        <div className="absolute top-2 left-2 w-24 h-36 bg-black/30 rounded-xl border border-white/10" />
-                        <div className="absolute top-1 left-1 w-24 h-36 bg-black/20 rounded-xl border border-white/10" />
+                        <div className="absolute top-2 left-2 w-[130px] h-[190px] md:w-[150px] md:h-[220px] bg-[#1a100e] rounded-2xl border-4 border-white/80" />
+                        <div className="absolute top-1 left-1 w-[130px] h-[190px] md:w-[150px] md:h-[220px] bg-[#1a100e] rounded-2xl border-4 border-white/90" />
 
                         <motion.div
                             onClick={() => isMyTurn && drawCard()}
-                            whileHover={isMyTurn ? { y: -6, scale: 1.04 } : {}}
-                            whileTap={isMyTurn ? { scale: 0.97 } : {}}
-                            className={`relative z-10 transition-all ${isMyTurn ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                            whileHover={isMyTurn ? { y: -10, scale: 1.05 } : {}}
+                            whileTap={isMyTurn ? { scale: 0.95 } : {}}
+                            className={cn(
+                                "relative z-10 w-[130px] h-[190px] md:w-[150px] md:h-[220px] transition-all shadow-2xl",
+                                isMyTurn ? "cursor-pointer" : "cursor-not-allowed opacity-80"
+                            )}
                             title={isMyTurn ? "Comprar carta" : "Não é sua vez"}
                         >
                             <UnoCard
                                 isBack={true}
-                                className="shadow-xl shadow-black/40"
+                                className="w-full h-full rounded-2xl border-4 border-white"
                             />
-                            {/* Brilho pulsante no deck quando é o turno */}
-                            {isMyTurn && (
-                                <motion.div
-                                    className="absolute -inset-1 rounded-xl border-2 border-auth-accent/60 pointer-events-none"
-                                    animate={{ opacity: [0.4, 1, 0.4] }}
-                                    transition={{ repeat: Infinity, duration: 1.5 }}
-                                />
-                            )}
                         </motion.div>
                     </div>
-                    <span className="text-xs font-semibold text-white/50 bg-black/30 px-3 py-1 rounded-full">
-                        {deckCount} Restantes
-                    </span>
                 </div>
 
             </div>
 
             {/* Cor da carta da vez */}
-            <span className="text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md text-white/80 shadow-inner flex items-center gap-2 border border-white/10">
-                <span className={`w-2.5 h-2.5 rounded-full ${colorMap[displayColor] || "bg-gray-500"}`} />
-                Cor da carta da vez: {currentColor || topCard?.color || "nenhuma"}
-            </span>
+            <div className="relative z-20 mt-4 px-6 py-2 rounded-full bg-[#1a100e]/80 backdrop-blur-md border border-white/5 flex items-center gap-3 shadow-lg">
+                <motion.div 
+                    layoutId="color-indicator"
+                    className={cn("w-3 h-3 rounded-full shadow-inner border border-white/20", glowColor)} 
+                />
+                <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+                    Cor da carta da vez: <strong className="text-white ml-1">{displayColor}</strong>
+                </span>
+            </div>
         </div>
     );
 };

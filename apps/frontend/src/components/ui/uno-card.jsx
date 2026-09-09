@@ -51,7 +51,7 @@ export const UnoCard = ({ color, type, value, isBack = false, style, className =
                 }}
             />
             {/* Fallback Text: Visível apenas se a imagem falhar ao carregar */}
-            <div className="flex absolute inset-0 flex-col items-center justify-center text-white font-bold text-xl drop-shadow-md">
+            <div className="hidden absolute inset-0 flex-col items-center justify-center text-white font-bold text-xl drop-shadow-md">
                 <span>{actualType === "number" ? value : actualType}</span>
             </div>
         </motion.div>

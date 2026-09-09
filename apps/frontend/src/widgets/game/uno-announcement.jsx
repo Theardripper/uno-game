@@ -30,10 +30,10 @@ export const UnoAnnouncement = () => {
                         transition={{ type: "spring", stiffness: 260, damping: 18 }}
                         className="flex flex-col items-center gap-1 px-10 py-5 rounded-3xl bg-linear-to-br from-auth-btn-grad-from to-auth-btn-grad-to shadow-2xl shadow-auth-accent/50 border-4 border-white/20"
                     >
-                        <span className="text-5xl font-black italic tracking-tighter text-white drop-shadow-md">
+                        <span className="text-5xl font-black italic tracking-tighter text-white drop-shadow-md font-(family-name:--font-baloo)">
                             UNO!
                         </span>
-                        <span className="text-sm font-bold uppercase tracking-widest text-white/90">
+                        <span className="text-sm font-bold uppercase tracking-widest text-white/90 font-(family-name:--font-rubik)">
                             {unoAnnouncement.playerName} avisou a mesa
                         </span>
                     </motion.div>

@@ -53,6 +53,13 @@ export const useGameActions = () => {
     }, [code]);
 
     /**
+     * Denuncia um jogador que esqueceu de dizer UNO com 1 carta na mão.
+     */
+    const catchUno = useCallback((targetId) => {
+        socketClient.emit(SocketEvents.CLIENT_CATCH_UNO, { roomCode: code, targetId });
+    }, [code]);
+
+    /**
      * Confirma a cor escolhida no ColorPickerModal para um curinga pendente.
      * Só emite CLIENT_PLAY_CARD agora, com a cor real, backend recebe tudo junto.
      * @param {string} color - "red" | "blue" | "green" | "yellow"
@@ -91,6 +98,7 @@ export const useGameActions = () => {
         playCard,
         drawCard,
         callUno,
+        catchUno,
         leaveGame,
         isLeaving,
         isPickingColor,

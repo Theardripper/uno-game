@@ -19,3 +19,7 @@ export const deleteScore = async (id) => {
 export const getScoresByGameId = async (game_id) => {
   return await Score.find({ gameId: game_id }); 
 };
+
+export const getScoresByPlayerId = async (playerId) => {
+  return await Score.find({ playerId }).sort({ timestamp: -1 });
+};
