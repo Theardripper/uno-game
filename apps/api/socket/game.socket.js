@@ -194,16 +194,26 @@ export default function registerGameSocket(io, socket) {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): marcar o grito de UNO no estado do player.
-        callback?.({ success: true });
+        try {
+            gameEngine.sayUno(room, socket.player.id);
+            broadcastGameState(io, room);
+            callback?.({ success: true });
+        } catch (error) {
+            callback?.({ success: false, message: error.message });
+        }
     });
 
     socket.on(GameEvents.CLIENT_CATCH_UNO, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): aplicar penalidade se a denúncia for válida.
-        callback?.({ success: true });
+        try {
+            const result = gameEngine.challengePlayer(room, socket.player.id, payload.targetId);
+            broadcastGameState(io, room);
+            callback?.({ success: true, message: result.message });
+        } catch (error) {
+            callback?.({ success: false, message: error.message });
+        }
     });
 
     socket.on(GameEvents.CLIENT_CHALLENGE_DRAW_FOUR, (payload, callback) => {
