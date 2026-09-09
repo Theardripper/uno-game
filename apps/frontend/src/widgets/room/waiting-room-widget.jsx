@@ -1,21 +1,26 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppToast } from "@/hooks/use-app-toast";
-import { ArrowLeft, Copy, Play, Users } from "lucide-react";
+import { Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { roomService } from "@/services/room.service";
 
 import { useWaitingRoom } from "@/features/room/hooks/use-waiting-room";
 import { useRoomActions } from "@/features/room/hooks/use-room-actions";
+import { useRoom } from "@/store/room/use-room";
 import { useGame } from "@/store/game/use-game";
 import { socketClient } from "@/socket/socket-client";
 import { SystemEvents } from "@shared/socket/events";
+import { cn } from "@/helpers/cn";
+
+import { WaitingRoomHeader } from "./waiting-room-header";
+import { PlayersGrid } from "./players-grid";
+import { RoomChat } from "./room-chat";
+import { InviteFriends } from "./invite-friends";
 
 export function WaitingRoomWidget({ roomCode }) {
     const router = useRouter();
     const { error: toastError, success: toastSuccess } = useAppToast();
+    const { actions: { setRoom } } = useRoom();
 
     const {
         room,
@@ -29,13 +34,8 @@ export function WaitingRoomWidget({ roomCode }) {
     } = useWaitingRoom(roomCode);
 
     const { toggleReady, startGame, leaveRoom, isStarting } = useRoomActions(roomCode, playerId);
-
-    // Observa o status do jogo para redirecionamento
-    // O handler global (game.handler.js) já faz patchGame({status: "playing"}) 
-    // ao receber SERVER_GAME_STARTED, então basta observar o store.
     const { status: gameStatus } = useGame();
 
-    // Redireciona caso dê erro ao buscar
     useEffect(() => {
         if (fetchError) {
             toastError("Não foi possível carregar a sala.", "Erro");
@@ -43,7 +43,6 @@ export function WaitingRoomWidget({ roomCode }) {
         }
     }, [fetchError, router, toastError]);
 
-    // Redireciona quando a partida começa (status muda via handler global)
     useEffect(() => {
         if (gameStatus === "playing") {
             toastSuccess("Redirecionando para o tabuleiro...", "Partida Iniciada!");
@@ -51,7 +50,6 @@ export function WaitingRoomWidget({ roomCode }) {
         }
     }, [gameStatus, router, roomCode, toastSuccess]);
 
-    // Ouve erros de socket para feedback visual
     useEffect(() => {
         const onGameError = (error) => {
             toastError(error.message || "Erro ao iniciar partida", "Atenção");
@@ -63,6 +61,19 @@ export function WaitingRoomWidget({ roomCode }) {
             socketClient.off(SystemEvents.SERVER_ERROR, onGameError);
         };
     }, [toastError]);
+
+    const hostName = room?.playerDetails?.find(p => p.id === room?.hostId)?.name;
+
+    const togglePrivacy = async () => {
+        try {
+            await roomService.updateRoom(room.id, { isPrivate: !room.isPrivate });
+            setRoom({ ...room, isPrivate: !room.isPrivate });
+            toastSuccess(`Sala agora é ${!room.isPrivate ? "Privada" : "Pública"}`, "Atualizado");
+        } catch (error) {
+            console.error("TOGGLE PRIVACY ERROR:", error);
+            toastError("Erro ao alterar privacidade da sala.", "Erro");
+        }
+    };
 
     const copyCode = () => {
         navigator.clipboard.writeText(roomCode);
@@ -76,97 +87,84 @@ export function WaitingRoomWidget({ roomCode }) {
     };
 
     if (isLoading) {
-        return <div className="flex h-full items-center justify-center">Carregando sala...</div>;
+        return (
+            <div className="flex h-full items-center justify-center text-white">
+                <span className="animate-pulse">Carregando sala...</span>
+            </div>
+        );
     }
 
     if (!room) return null;
 
     return (
-        <div className="flex h-full w-full flex-col items-center justify-center p-4">
-            <div className="w-full max-w-2xl">
-                <Button variant="ghost" onClick={handleLeaveRoom} className="mb-4">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Lobby
-                </Button>
+        <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col pt-2">
+            <button 
+                onClick={handleLeaveRoom}
+                className="self-start flex items-center gap-2 text-white/50 hover:text-white mb-4 text-xs font-bold uppercase tracking-widest transition-colors"
+            >
+                ← Sair da Sala
+            </button>
 
-                <Card className="border-primary/20 shadow-xl shadow-primary/10">
-                    <CardHeader className="text-center pb-6">
-                        <CardTitle className="text-3xl font-bold text-primary flex items-center justify-center gap-2">
-                            Sala de Espera
-                        </CardTitle>
-                        <CardDescription className="text-lg mt-2 flex items-center justify-center gap-2">
-                            Código: <strong className="text-foreground tracking-widest">{roomCode}</strong>
-                            <Button variant="outline" size="icon" className="h-8 w-8 ml-2" onClick={copyCode}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </CardDescription>
-                    </CardHeader>
+            <WaitingRoomHeader 
+                hostName={hostName} 
+                playerCount={room.playerDetails?.length || 0} 
+                maxPlayers={room.maxPlayers} 
+                roomCode={roomCode} 
+                isHost={isHost}
+                isPrivate={room.isPrivate}
+                onTogglePrivacy={togglePrivacy}
+                onCopyCode={copyCode} 
+            />
 
-                    <CardContent className="space-y-6">
-                        <div className="flex justify-between items-center bg-muted/50 p-3 rounded-lg border">
-                            <span className="flex items-center gap-2 font-medium">
-                                <Users className="h-5 w-5 text-primary" />
-                                Jogadores
-                            </span>
-                            <Badge variant="secondary" className="text-sm">
-                                {room.playerDetails?.length || 0} / {room.maxPlayers}
-                            </Badge>
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
+                {/* Left Side: Players Grid and Action Button */}
+                <div className="lg:col-span-2 flex flex-col h-full min-h-0">
+                    <div className="flex-1 min-h-0">
+                        <PlayersGrid room={room} playerId={playerId} />
+                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {room.playerDetails?.map((player) => (
-                                <div key={player.id} className="flex items-center space-x-4 p-3 rounded-xl border bg-card hover:bg-muted/30 transition-colors">
-                                    <Avatar className="h-12 w-12 border-2 border-primary/20">
-                                        <AvatarImage src={player.avatarSeed} alt={player.name} />
-                                        <AvatarFallback>{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 space-y-1">
-                                        <p className="text-sm font-medium leading-none flex items-center gap-2">
-                                            {player.name}
-                                            {player.id === room.hostId && (
-                                                <Badge variant="default" className="text-[10px] h-4 px-1.5 uppercase">Host</Badge>
-                                            )}
-                                            {player.ready ? (
-                                                <Badge variant="success" className="bg-green-500 text-white hover:bg-green-600 border-green-500 text-[10px] h-4 px-1.5 uppercase ml-auto">✓ Pronto</Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="text-muted-foreground border-dashed text-[10px] h-4 px-1.5 uppercase ml-auto">○ Não pronto</Badge>
-                                            )}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">Nível {player.level}</p>
-                                    </div>
-                                </div>
-                            ))}
+                    <div className="mt-6 shrink-0 pb-6">
+                        {isHost ? (
+                            <button
+                                disabled={!canStart || !allPlayersReady || isStarting}
+                                onClick={startGame}
+                                className={cn(
+                                    "w-full h-16 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-xl md:text-2xl tracking-widest uppercase transition-all shadow-[0_0_40px_rgba(255,69,58,0.3)]",
+                                    (!canStart || !allPlayersReady || isStarting) 
+                                        ? "bg-gray-800 text-gray-500 shadow-none cursor-not-allowed border border-white/5" 
+                                        : "bg-gradient-to-r from-[#FF5545] to-[#C0000A] hover:from-[#FF453A] hover:to-[#A00008] hover:shadow-[0_0_50px_rgba(255,69,58,0.5)] border-b-4 border-[#8B0000]"
+                                )}
+                            >
+                                {isStarting ? "Iniciando..." : "Começar Partida"}
+                                {!isStarting && <Play className="w-5 h-5 fill-current" />}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={toggleReady}
+                                className={cn(
+                                    "w-full h-16 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-xl md:text-2xl tracking-widest uppercase transition-all",
+                                    isReady
+                                        ? "bg-black/40 border border-white/10 hover:bg-black/60 text-white/70"
+                                        : "bg-gradient-to-r from-[#FF5545] to-[#C0000A] hover:from-[#FF453A] hover:to-[#A00008] shadow-[0_0_40px_rgba(255,69,58,0.3)] border-b-4 border-[#8B0000]"
+                                )}
+                            >
+                                {isReady ? "Cancelar Pronto" : "Estou Pronto"}
+                            </button>
+                        )}
+                        
+                        {!isHost && (
+                            <p className="text-center text-gray-500 text-[10px] uppercase font-bold tracking-widest mt-4">
+                                Aguardando o host iniciar a partida
+                            </p>
+                        )}
+                    </div>
+                </div>
 
-                            {/* Vagas vazias */}
-                            {Array.from({ length: room.maxPlayers - (room.playerDetails?.length || 0) }).map((_, i) => (
-                                <div key={`empty-${i}`} className="flex items-center space-x-4 p-3 rounded-xl border border-dashed bg-muted/20 opacity-50">
-                                    <Avatar className="h-12 w-12 border-2 border-dashed">
-                                        <AvatarFallback className="bg-transparent">?</AvatarFallback>
-                                    </Avatar>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium leading-none text-muted-foreground">Aguardando...</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="pt-6 flex flex-col items-center gap-4">
-                            <Button size="lg" variant={isReady ? "outline" : "default"} onClick={toggleReady} className="w-full max-w-sm h-12">
-                                {isReady ? "Cancelar Pronto" : "Pronto"}
-                            </Button>
-
-                            {isHost ? (
-                                <Button size="lg" className="w-full max-w-sm h-14 text-lg" disabled={!canStart || !allPlayersReady || isStarting} onClick={startGame}>
-                                    <Play className="mr-2 h-6 w-6" />
-                                    {isStarting ? "Iniciando..." : (allPlayersReady ? "Iniciar Partida" : "Aguardando jogadores...")}
-                                </Button>
-                            ) : (
-                                <div className="text-center p-4 rounded-lg bg-muted/50 border border-muted w-full max-w-sm animate-pulse">
-                                    <p className="text-sm font-medium text-muted-foreground">Aguardando o host iniciar a partida...</p>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Right Side: Online Friends and Chat */}
+                <div className="lg:col-span-1 flex flex-col h-full min-h-0 pb-6">
+                    <InviteFriends />
+                    <RoomChat />
+                </div>
             </div>
         </div>
     );

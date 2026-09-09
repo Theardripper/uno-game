@@ -104,7 +104,6 @@ export function removePlayer(room, playerId) {
  */
 export function toSnapshot(room) {
     return {
-        id: room.id,
         code: room.code,
         hostId: room.hostId,
         status: room.status,

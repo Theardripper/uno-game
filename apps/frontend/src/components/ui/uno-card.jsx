@@ -18,7 +18,7 @@ import { getCardImage } from "@/helpers/get-card-image";
 export const UnoCard = ({ color, type, value, isBack = false, style, className = "", ...props }) => {
 
     // O backend usa 'value' para tudo. Se 'type' não vier, assumimos que é igual a 'value'
-    const actualType = type || value;
+    const actualType = (value !== undefined && value !== null && type === "number") ? value : (value !== undefined && value !== null && !type) ? value : (type || value);
 
     const cardImage = isBack ? "/cards/back.png" : getCardImage({ color, value: actualType });
 
@@ -51,7 +51,7 @@ export const UnoCard = ({ color, type, value, isBack = false, style, className =
                 }}
             />
             {/* Fallback Text: Visível apenas se a imagem falhar ao carregar */}
-            <div className="flex absolute inset-0 flex-col items-center justify-center text-white font-bold text-xl drop-shadow-md">
+            <div className="hidden absolute inset-0 flex-col items-center justify-center text-white font-bold text-xl drop-shadow-md">
                 <span>{actualType === "number" ? value : actualType}</span>
             </div>
         </motion.div>

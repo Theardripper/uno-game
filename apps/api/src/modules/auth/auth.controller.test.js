@@ -49,7 +49,7 @@ describe('Auth Controller', () => {
             await signUp(req, res, next);
 
             expect(authService.signUp).toHaveBeenCalledWith('John Doe', 'john@example.com', 'password123');
-            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Conta criada com sucesso.', 201);
+            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Account created successfully.', 201);
             expect(next).not.toHaveBeenCalled();
         });
 
@@ -85,7 +85,7 @@ describe('Auth Controller', () => {
             await signIn(req, res, next);
 
             expect(authService.signIn).toHaveBeenCalledWith('john@example.com', 'password123');
-            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Logado com sucesso.');
+            expect(success).toHaveBeenCalledWith(res, mockServiceData, 'Logged successfully.');
             expect(next).not.toHaveBeenCalled();
         });
 

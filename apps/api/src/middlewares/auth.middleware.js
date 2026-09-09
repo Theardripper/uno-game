@@ -1,12 +1,7 @@
 import { verifyToken } from "#config/jwt.js";
 import { AppError } from "#shared/errors/AppError.js";
+import { isTokenBlacklisted } from "#modules/auth/token-blacklist.js";
 
-/**
- * Middleware that extracts and verifies the JWT from the Authorization header.
- * Attaches decoded user payload to req.user.
- *
- * Expected header: Authorization: Bearer <token>
- */
 export const extractUser = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -15,6 +10,11 @@ export const extractUser = (req, res, next) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
+
+    if (isTokenBlacklisted(token)) {
+        throw new AppError("Token has been logged out", 401, "TOKEN_REVOKED");
+    }
+
     const decoded = verifyToken(token);
 
     if (!decoded) {
@@ -22,5 +22,6 @@ export const extractUser = (req, res, next) => {
     }
 
     req.user = decoded;
+    req.token = token;
     next();
 };

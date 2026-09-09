@@ -1,8 +1,10 @@
+import mongoose from "mongoose";
 import { ErrorCodes } from "../../shared/api/responses/errors.js";
 import { GameEvents, SystemEvents } from "../../shared/socket/events.js";
 import { calculateXpEarned, getLevel } from "../../shared/utils/progression.js";
 import { gameEngine } from "../src/modules/game/game.engine.js";
 import Player from "../src/modules/player/player.model.js";
+import * as scoreService from "../src/modules/score/score.service.js";
 import Room from "../src/modules/room/room.model.js";
 import { broadcastGameState } from "./game.broadcaster.js";
 import { getRoom } from "./store/rooms.store.js";
@@ -28,8 +30,16 @@ export async function processGameFinishedWithRoomCode(io, game, roomCode) {
 
             const xpEarned = calculateXpEarned(score, resultType);
 
-            // Atualiza o banco de dados
-            const dbPlayer = await Player.findById(player.id);
+            // Atualiza o banco de dados apenas se o player possuir um ObjectId válido
+            let dbPlayer = null;
+            if (mongoose.isValidObjectId(player.id)) {
+                try {
+                    dbPlayer = await Player.findById(player.id);
+                } catch (err) {
+                    console.error("[Game Socket] Error fetching dbPlayer:", err);
+                }
+            }
+
             if (dbPlayer) {
                 const previousLevel = getLevel(dbPlayer.xp);
 
@@ -53,14 +63,61 @@ export async function processGameFinishedWithRoomCode(io, game, roomCode) {
                     previousLevel,
                     isWinner: player.id === game.winnerId,
                 });
+            } else {
+                results.push({
+                    playerId: player.id,
+                    name: player.name,
+                    avatarSeed: player.avatarSeed,
+                    score,
+                    xpEarned,
+                    totalXp: xpEarned,
+                    level: 1,
+                    previousLevel: 1,
+                    isWinner: player.id === game.winnerId,
+                });
             }
         }
+
+        const history = game.history || [];
+        const cardsPlayed = history.filter(h => h.action === "played_card").length;
+        const unosSaid = history.filter(h => h.action === "said_uno").length;
+        const durationSeconds = game.startedAt ? Math.floor((Date.now() - new Date(game.startedAt).getTime()) / 1000) : 0;
+        
+        const minutes = Math.floor(durationSeconds / 60);
+        const seconds = (durationSeconds % 60).toString().padStart(2, '0');
+        const formattedDuration = `${minutes}:${seconds}`;
+
+        // Salvar os scores no banco
+        for (const res of results) {
+            if (mongoose.isValidObjectId(res.playerId)) {
+                try {
+                    await scoreService.createScore({
+                        playerId: res.playerId,
+                        gameId: roomCode,
+                        score: res.score,
+                        result: res.isWinner ? (game.endReason === "PLAYER_LEFT" ? "WO" : "Victory") : "Defeat",
+                        duration: formattedDuration,
+                        playersCount: allPlayers.length,
+                        xpEarned: res.xpEarned,
+                    });
+                } catch (err) {
+                    console.error("[Game Socket] Error saving score:", err);
+                }
+            }
+        }
+
+        const matchDetails = {
+            duration: formattedDuration,
+            cardsPlayed,
+            unosSaid,
+        };
 
         io.to(roomCode).emit(GameEvents.SERVER_GAME_FINISHED, {
             roomCode,
             winnerId: game.winnerId,
             reason: game.endReason,
             results,
+            matchDetails,
         });
 
         await Room.deleteOne({ code: roomCode });
@@ -111,6 +168,11 @@ export default function registerGameSocket(io, socket) {
         try {
             const game = gameEngine.playCard(room.code, player.id, payload?.cardId, payload?.color);
             broadcastGameState(io, game);
+
+            if (game.lastEvent) {
+                io.to(room.code).emit(GameEvents.SERVER_GAME_EVENT, game.lastEvent);
+            }
+            
             checkFinished(game, room.code);
             callback?.({ success: true, card: payload?.cardId });
         } catch (error) {
@@ -149,27 +211,70 @@ export default function registerGameSocket(io, socket) {
         callback?.({ success: true, color: payload?.color });
     });
 
+    /**
+     * Jogador declara "UNO" ao ficar com 1 carta na mão.
+     * Regra: gameEngine.sayUno só aceita se hand.length === 1;
+     * caso contrário lança AppError (tratado no catch abaixo).
+     */
     socket.on(GameEvents.CLIENT_CALL_UNO, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): marcar o grito de UNO no estado do player.
-        callback?.({ success: true });
+        try {
+            const game = gameEngine.sayUno(room.code, player.id);
+            broadcastGameState(io, game);
+            callback?.({ success: true });
+        } catch (error) {
+            emitError(ErrorCodes.INVALID_PAYLOAD, error.message);
+            callback?.({ success: false });
+        }
     });
 
+    /**
+     * Um jogador denuncia outro por não ter dito "UNO" a tempo.
+     * payload.targetId = id do jogador denunciado.
+     * Se a denúncia for válida (o denunciado não disse UNO e está
+     * com 1 carta), ele compra 2 cartas de penalidade.
+     */
     socket.on(GameEvents.CLIENT_CATCH_UNO, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): aplicar penalidade se a denúncia for válida.
-        callback?.({ success: true });
+        const targetId = payload?.targetId;
+
+        if (!targetId) {
+            emitError(ErrorCodes.INVALID_PAYLOAD, "targetId é obrigatório");
+            return callback?.({ success: false });
+        }
+
+        try {
+            const result = gameEngine.challengePlayer(room.code, player.id, targetId);
+
+            io.to(room.code).emit(GameEvents.SERVER_CHALLENGE_RESULT, {
+                challengerId: player.id,
+                challengedId: targetId,
+                success: result.success,
+                message: result.message,
+            });
+
+            broadcastGameState(io, result.game);
+            checkFinished(result.game, room.code);
+
+            callback?.({ success: true, challengeSucceeded: result.success });
+        } catch (error) {
+            emitError(ErrorCodes.INVALID_PAYLOAD, error.message);
+            callback?.({ success: false });
+        }
     });
 
     socket.on(GameEvents.CLIENT_CHALLENGE_DRAW_FOUR, (payload, callback) => {
         const room = requireRoom(callback);
         if (!room) return;
 
-        // TODO(game-engine): resolver o desafio e emitir SERVER_CHALLENGE_RESULT.
+        // TODO(game-engine): resolver o desafio ao +4 (mecânica diferente do
+        // catch-UNO acima: exige verificar se o jogador penalizado tinha uma
+        // carta válida da cor anterior na mão no momento da jogada). Ainda não
+        // implementado no gameEngine.
         callback?.({ success: true });
     });
 
