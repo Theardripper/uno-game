@@ -1,4 +1,5 @@
-import { useAuthStore } from "@store/auth/auth.store";
+import Cookies from "js-cookie";
+import { useAuthStore } from "@/store/auth/auth.store";
 
 /**
  * Executado após toda resposta da API.
@@ -30,6 +31,8 @@ export async function afterResponse({
             .getState()
             .actions
             .logout();
+            
+        Cookies.remove("accessToken", { path: "/" });
 
         if (typeof window !== "undefined") {
             window.location.href = "/sign-in";

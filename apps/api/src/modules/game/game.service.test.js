@@ -10,9 +10,10 @@ const GameMock = {
 };
 
 class AppErrorMock extends Error {
-    constructor(message, statusCode) {
+    constructor(message, statusCode, errorCode) {
         super(message);
         this.statusCode = statusCode;
+        this.errorCode = errorCode;
     }
 }
 
@@ -84,7 +85,7 @@ describe('GameService - getGameById', () => {
         GameMock.findById.mockResolvedValue(null);
 
         await expect(gameService.getGameById('nao-existe')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -106,7 +107,7 @@ describe('GameService - updateGame', () => {
         GameMock.findByIdAndUpdate.mockResolvedValue(null);
 
         await expect(gameService.updateGame('nao-existe', {})).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -128,7 +129,7 @@ describe('GameService - deleteGame', () => {
         GameMock.findByIdAndDelete.mockResolvedValue(null);
 
         await expect(gameService.deleteGame('nao-existe')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -165,7 +166,7 @@ describe('GameService - joinGame', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.joinGame(999, 'user')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -192,7 +193,7 @@ describe('GameService - startGame', () => {
         GameMock.findOne.mockResolvedValue(fakeGame);
 
         await expect(gameService.startGame(111, 'intruso')).rejects.toMatchObject({
-            message: 'Only the creator can start the game',
+            errorCode: 'UNAUTHORIZED',
             statusCode: 403,
         });
         expect(save).not.toHaveBeenCalled();
@@ -202,7 +203,7 @@ describe('GameService - startGame', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.startGame(999, 'user')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -228,7 +229,7 @@ describe('GameService - leaveGame', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.leaveGame(999, 'user')).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -254,7 +255,7 @@ describe('GameService - endGame', () => {
         GameMock.findOne.mockResolvedValue(fakeGame);
 
         await expect(gameService.endGame(111, 'intruso')).rejects.toMatchObject({
-            message: 'Only the creator can end the game',
+            errorCode: 'UNAUTHORIZED',
             statusCode: 403,
         });
         expect(save).not.toHaveBeenCalled();
@@ -283,7 +284,7 @@ describe('GameService - getGameState', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getGameState(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -303,7 +304,7 @@ describe('GameService - getGamePlayers', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getGamePlayers(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -346,7 +347,7 @@ describe('GameService - getCurrentPlayer', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getCurrentPlayer(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -366,7 +367,7 @@ describe('GameService - getTopCard', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getTopCard(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -387,7 +388,7 @@ describe('GameService - getScores', () => {
         GameMock.findOne.mockResolvedValue(null);
 
         await expect(gameService.getScores(999)).rejects.toMatchObject({
-            message: 'Game not found',
+            errorCode: 'GAME_NOT_FOUND',
             statusCode: 404,
         });
     });

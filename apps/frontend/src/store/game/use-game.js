@@ -14,6 +14,8 @@ export const useGame = () => {
             topCard: state.topCard,
             currentTurn: state.currentTurn,
             currentColor: state.currentColor,
+            direction: state.direction,
+            unoAnnouncement: state.unoAnnouncement,
             players: state.players,
             hand: state.hand,
             deckCount: state.deckCount,
@@ -21,6 +23,8 @@ export const useGame = () => {
             winnerId: state.winnerId,
             endReason: state.endReason,
             matchResults: state.matchResults,
+            matchDetails: state.matchDetails,
+            history: state.history,
             actions: state.actions,
         }))
     );

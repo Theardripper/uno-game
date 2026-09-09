@@ -1,4 +1,5 @@
 import { AppError } from '#shared/errors/AppError.js';
+import { logger } from '#shared/logger/logger.js';
 
 /**
  * Global error handler middleware.
@@ -30,8 +31,38 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
+    if (err.name === 'ValidationError') {
+        return res.status(400).json({
+            error: {
+                code: 'VALIDATION_ERROR',
+                message: Object.values(err.errors).map(e => e.message).join(', '),
+            },
+        });
+    }
+
+    // Malformed ObjectId in the URL (e.g. /api/cards/abc)
+    if (err.name === 'CastError') {
+        return res.status(400).json({
+            error: {
+                code: 'INVALID_ID',
+                message: `The value provided for '${err.path}' is not a valid id`,
+            },
+        });
+    }
+
+    // Malformed JSON in the request body, thrown by express.json()
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({
+            error: {
+                code: 'INVALID_PAYLOAD',
+                message: 'Request body is not valid JSON',
+            },
+        });
+    }
+
     // Unexpected errors — never expose internals
-    console.error('Unhandled error:', err);
+    console.error(err);
+    logger.error('Unhandled error', { error: err });
     return res.status(500).json({
         error: {
             code: 'INTERNAL_SERVER_ERROR',

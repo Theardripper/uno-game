@@ -4,6 +4,7 @@ import { validate } from "#middlewares/validate.middleware.js";
 import { Router } from "express";
 import { GuestSchema, SignInSchema, SignUpSchema } from "../../../../shared/schemas/index.js";
 import * as authController from "./auth.controller.js";
+import { extractUser } from "#middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ const router = Router();
 router.post("/sign-up", validate(SignUpSchema), authController.signUp);
 router.post("/sign-in", validate(SignInSchema), authController.signIn);
 router.post("/guest", validate(GuestSchema), authController.guestLogin);
+router.post("/logout", extractUser, authController.logout);
 
 export default router;

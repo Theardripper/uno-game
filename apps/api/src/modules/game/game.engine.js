@@ -19,6 +19,30 @@ class GameEngine {
     }
 
     /**
+     * Registra uma ação no histórico da partida.
+     */
+    _logHistory(game, playerId, action, detail = {}) {
+        game.history = game.history || [];
+        game.history.push({
+            player: playerId,
+            action,
+            ...detail,
+            timestamp: new Date(),
+        });
+    }
+
+    /**
+     * Busca a partida em andamento, lançando erro se não existir ou já tiver acabado.
+     */
+    _getActiveGameOrThrow(roomCode) {
+        const game = this.activeGames.get(roomCode);
+        if (!game || game.status !== "in_progress") {
+            throw new AppError(`The game in room ${roomCode} is not in progress`, 400, "GAME_NOT_IN_PROGRESS");
+        }
+        return game;
+    }
+
+    /**
      * Inicia uma partida a partir dos jogadores de uma sala
      */
     initializeGame(roomCode, roomPlayers) {
@@ -31,6 +55,7 @@ class GameEngine {
             avatarSeed: p.avatarSeed || p.avatar_seed,
             hand: [],
             isConnected: true,
+            saidUno: false,
         }));
 
         // Distribui 7 cartas para cada
@@ -58,6 +83,8 @@ class GameEngine {
             currentTurn: players[0].id,
             turnIndex: 0,
             removedPlayers: [],
+            history: [],
+            startedAt: new Date(),
         };
 
         this.activeGames.set(roomCode, gameState);
@@ -93,7 +120,7 @@ class GameEngine {
 
         game.matchScores = {};
         let winnerScore = 0;
-        
+
         const allPlayers = [...game.players, ...(game.removedPlayers || [])];
 
         for (const p of allPlayers) {
@@ -102,7 +129,7 @@ class GameEngine {
             for (const card of p.hand) {
                 pScore += (card.score || 0);
             }
-            
+
             if (p.id !== game.winnerId) {
                 game.matchScores[p.id] = pScore; // Perdedor fica com o valor de sua mão
                 winnerScore += pScore;
@@ -140,8 +167,8 @@ class GameEngine {
      */
     drawCard(roomCode, playerId) {
         const game = this.activeGames.get(roomCode);
-        if (!game || game.status !== "in_progress") throw new AppError("Partida não está em andamento", 400);
-        if (game.currentTurn !== playerId) throw new AppError("Não é o seu turno", 400);
+        if (!game || game.status !== "in_progress") throw new AppError(`The game in room ${roomCode} is not in progress`, 400, "GAME_NOT_IN_PROGRESS");
+        if (game.currentTurn !== playerId) throw new AppError(`Not your turn: it is ${game.currentTurn}\u0027s turn`, 400, "NOT_YOUR_TURN");
 
         this._recycleDeckIfNeeded(game);
 
@@ -151,6 +178,11 @@ class GameEngine {
         if (drawn.length > 0) {
             player.hand.push(...drawn);
         }
+
+        // Comprar carta invalida uma declaração de UNO pendente
+        player.saidUno = false;
+
+        this._logHistory(game, playerId, "drew_card", { cardCount: drawn.length });
 
         // Passa o turno
         game.turnIndex = this._getNextTurnIndex(game, 1);
@@ -164,24 +196,24 @@ class GameEngine {
      */
     playCard(roomCode, playerId, cardId, selectedColor) {
         const game = this.activeGames.get(roomCode);
-        if (!game || game.status !== "in_progress") throw new AppError("Partida não está em andamento", 400);
-        if (game.currentTurn !== playerId) throw new AppError("Não é o seu turno", 400);
+        if (!game || game.status !== "in_progress") throw new AppError(`The game in room ${roomCode} is not in progress`, 400, "GAME_NOT_IN_PROGRESS");
+        if (game.currentTurn !== playerId) throw new AppError(`Not your turn: it is ${game.currentTurn}\u0027s turn`, 400, "NOT_YOUR_TURN");
 
         const player = game.players.find((p) => p.id === playerId);
         const cardIndex = player.hand.findIndex((c) => c.id === cardId);
 
-        if (cardIndex === -1) throw new AppError("Carta não encontrada na mão do jogador", 400);
+        if (cardIndex === -1) throw new AppError(`Card ${cardId} is not in the player hand`, 400, "INVALID_CARD");
 
         const cardToPlay = player.hand[cardIndex];
 
         // Validação da jogada
         if (!canPlayCard(cardToPlay, game.topCard, game.currentColor)) {
-            throw new AppError("Jogada inválida! A carta não combina com a cor ou valor atual.", 400);
+            throw new AppError(`Invalid move: card matches neither the current color (${game.currentColor}) nor the top value (${game.topCard.value})`, 400, "INVALID_CARD");
         }
 
         // Se for Wild, exige selectedColor
         if (cardToPlay.color === "wild" && !selectedColor) {
-            throw new AppError("Você precisa escolher uma cor para a carta curinga", 400);
+            throw new AppError("Wild card requires selectedColor: red, blue, green or yellow", 400, "INVALID_PAYLOAD");
         }
 
         // 1. Remove da mão e joga na mesa
@@ -190,17 +222,24 @@ class GameEngine {
         game.topCard = cardToPlay;
         game.currentColor = cardToPlay.color === "wild" ? selectedColor : cardToPlay.color;
 
+        // Jogar uma carta muda a contagem da mão: invalida um UNO já declarado
+        // (o jogador precisa dizer UNO de novo se ficar com 1 carta após esta jogada)
+        player.saidUno = false;
+
+        this._logHistory(game, playerId, "played_card", {
+            card: { color: cardToPlay.color, value: cardToPlay.value },
+        });
+
         // 2. Aplica efeitos da carta (Skip, Reverse, Draw)
         let stepsToAdvance = 1;
         let cardsToDrawForNext = 0;
 
         switch (cardToPlay.value) {
             case "reverse":
+                game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 // Se tiver apenas 2 jogadores, reverse funciona como skip
                 if (game.players.length === 2) {
                     stepsToAdvance = 2;
-                } else {
-                    game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 }
                 break;
             case "skip":
@@ -226,6 +265,9 @@ class GameEngine {
                 const drawn = drawCards(game.deck, 1);
                 if (drawn.length > 0) nextPlayer.hand.push(...drawn);
             }
+
+            // A penalidade muda a contagem da mão do próximo jogador
+            nextPlayer.saidUno = false;
         }
 
         // 3. Atualiza o turno
@@ -241,6 +283,119 @@ class GameEngine {
         }
 
         return game;
+    }
+
+    /**
+     * Ação: O jogador declara "UNO" quando fica com exatamente 1 carta na mão.
+     * Deve ser chamado como uma ação separada após jogar/comprar.
+     */
+    sayUno(roomCode, playerId) {
+        const game = this._getActiveGameOrThrow(roomCode);
+
+        const player = game.players.find((p) => p.id === playerId);
+        if (!player) throw new AppError(`Player ${playerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
+
+        if (player.hand.length !== 1) {
+            throw new AppError(`UNO can only be called with 1 card in hand; you have ${player.hand.length}`, 400, "INVALID_PAYLOAD");
+        }
+
+        if (!player.saidUno) {
+            player.saidUno = true;
+            this._logHistory(game, playerId, "said_uno");
+        }
+
+        return game;
+    }
+
+    /**
+     * Ação: Um jogador desafia outro por não ter dito "UNO" a tempo.
+     * Se o desafio for bem-sucedido, o desafiado compra 2 cartas de penalidade.
+     */
+    challengePlayer(roomCode, challengerId, challengedId) {
+        const game = this._getActiveGameOrThrow(roomCode);
+
+        const challenger = game.players.find((p) => p.id === challengerId);
+        if (!challenger) throw new AppError(`Challenger ${challengerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
+
+        const challenged = game.players.find((p) => p.id === challengedId);
+        if (!challenged) throw new AppError(`Challenged player ${challengedId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
+
+        if (challenged.hand.length !== 1) {
+            throw new AppError(`Invalid challenge: ${challenged.name} holds ${challenged.hand.length} cards`, 400, "INVALID_PAYLOAD");
+        }
+
+        if (challenged.saidUno) {
+            this._logHistory(game, challengerId, "challenge_failed", { challenged: challengedId });
+            return { game, success: false, message: `${challenged.name} disse UNO a tempo.` };
+        }
+
+        // Desafio bem-sucedido: desafiado compra 2 cartas de penalidade
+        for (let i = 0; i < 2; i++) {
+            this._recycleDeckIfNeeded(game);
+            const drawn = drawCards(game.deck, 1);
+            if (drawn.length > 0) challenged.hand.push(...drawn);
+        }
+        challenged.saidUno = false;
+
+        this._logHistory(game, challengerId, "challenge_success", { challenged: challengedId });
+
+        return { game, success: true, message: `${challenged.name} esqueceu de dizer UNO e comprou 2 cartas.` };
+    }
+
+    /**
+     * Verifica se o jogador tem alguma carta jogável na mão, dado o estado
+     * atual da mesa. Usado para decidir se ele é obrigado a comprar
+     * (regra: "se não puder jogar, deve comprar do baralho").
+     */
+    hasValidMove(roomCode, playerId) {
+        const game = this._getActiveGameOrThrow(roomCode);
+
+        const player = game.players.find((p) => p.id === playerId);
+        if (!player) throw new AppError(`Player ${playerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
+
+        return player.hand.some((card) => canPlayCard(card, game.topCard, game.currentColor));
+    }
+
+    /**
+     * Retorna a mão de um jogador específico (sem expor as mãos dos demais).
+     */
+    getPlayerHand(roomCode, playerId) {
+        const game = this.activeGames.get(roomCode);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, "GAME_NOT_FOUND");
+
+        const player = game.players.find((p) => p.id === playerId);
+        if (!player) throw new AppError(`Player ${playerId} is not in the game in room ${roomCode}`, 404, "PLAYER_NOT_IN_GAME");
+
+        return { roomCode, playerId, hand: player.hand };
+    }
+
+    /**
+     * Retorna o histórico de jogadas da partida.
+     */
+    getHistory(roomCode) {
+        const game = this.activeGames.get(roomCode);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, "GAME_NOT_FOUND");
+
+        return { roomCode, history: game.history || [] };
+    }
+
+    /**
+     * Retorna a pontuação corrente de cada jogador (soma dos pontos das cartas
+     * ainda na mão). Quando a partida termina, usa o placar final calculado.
+     */
+    getScores(roomCode) {
+        const game = this.activeGames.get(roomCode);
+        if (!game) throw new AppError(`No active game in room ${roomCode}`, 404, "GAME_NOT_FOUND");
+
+        if (game.status === "finished" && game.matchScores) {
+            return { roomCode, scores: game.matchScores };
+        }
+
+        const scores = {};
+        for (const p of game.players) {
+            scores[p.id] = p.hand.reduce((sum, card) => sum + (card.score || 0), 0);
+        }
+        return { roomCode, scores };
     }
 
     /**
@@ -261,7 +416,9 @@ class GameEngine {
                 avatarSeed: p.avatarSeed,
                 cardCount: p.hand.length,
                 isConnected: p.isConnected,
+                saidUno: p.saidUno,
             })),
+            history: (game.history || []).slice(-20),
         };
 
         if (game.status === "finished") {

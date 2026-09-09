@@ -15,7 +15,7 @@ export const createRoom = async (hostId, data) => {
         code: generateCode(),
         hostId,
         maxPlayers: data.maxPlayers || 4,
-        isPrivate: data.isPrivate || false,
+        isPrivate: data.isPrivate !== undefined ? data.isPrivate : true,
         password: data.password || null,
         players: [hostId],
     });
@@ -25,15 +25,15 @@ export const createRoom = async (hostId, data) => {
 export const validateRoomCode = async (code) => {
     const room = await Room.findOne({ code });
     if (!room) {
-        throw new AppError("Sala não encontrada", 404);
+        throw new AppError(`No room found with code ${code}`, 404, "ROOM_NOT_FOUND");
     }
 
     if (room.status !== "waiting") {
-        throw new AppError("Jogo já iniciado ou finalizado", 409);
+        throw new AppError(`Room ${code} is not accepting players: status is ${room.status}`, 409, "GAME_ALREADY_STARTED");
     }
 
     if (room.players.length >= room.maxPlayers) {
-        throw new AppError("Sala cheia", 409);
+        throw new AppError(`Room ${code} is full: ${room.maxPlayers} players already joined`, 409, "ROOM_FULL");
     }
 
     return room;
@@ -42,34 +42,63 @@ export const validateRoomCode = async (code) => {
 export const getRoomByCode = async (code) => {
     const room = await Room.findOne({ code }).lean();
     if (!room) {
-        throw new AppError("Sala não encontrada", 404);
+        throw new AppError(`No room found with code ${code}`, 404, "ROOM_NOT_FOUND");
     }
-    
+
     // Fetch player details
     const Player = (await import("../player/player.model.js")).default;
     const players = await Player.find({ _id: { $in: room.players } });
-    
+
     // Format the players like toPublicJSON
     room.playerDetails = players.map(p => ({
         id: p._id.toString(),
         name: p.name,
         tag: p.tag,
-        avatarSeed: `https://api.dicebear.com/9.x/avataaars/svg?seed=${p.avatar_seed}`,
+        avatarSeed: `https://api.dicebear.com/9.x/bottts/svg?seed=${p.avatar_seed}`,
         level: p.level,
         ready: room.readyPlayers ? room.readyPlayers.includes(p._id.toString()) : false
     }));
 
+    room.id = room._id.toString();
     return room;
+};
+
+export const getPublicRooms = async () => {
+    const rooms = await Room.find({ isPrivate: false, status: "waiting" }).lean();
+    
+    // Fetch player details for hosts
+    const hostIds = rooms.map(r => r.hostId);
+    const Player = (await import("../player/player.model.js")).default;
+    const hosts = await Player.find({ _id: { $in: hostIds } }).lean();
+    
+    const hostMap = hosts.reduce((acc, h) => {
+        acc[h._id.toString()] = h;
+        return acc;
+    }, {});
+
+    return rooms
+        .filter(room => hostMap[room.hostId]) // Ignora salas órfãs de contas apagadas/inexistentes
+        .map(room => {
+            const host = hostMap[room.hostId];
+            return {
+                ...room,
+                id: room._id.toString(),
+                currentPlayers: room.players.length,
+                hostName: host.name,
+                hostTag: host.tag,
+                hostAvatar: `https://api.dicebear.com/9.x/bottts/svg?seed=${host.avatar_seed}`
+            };
+        });
 };
 
 export const joinRoom = async (code, playerId) => {
     const room = await Room.findOne({ code });
     if (!room) {
-        throw new AppError("Sala não encontrada", 404);
+        throw new AppError(`No room found with code ${code}`, 404, "ROOM_NOT_FOUND");
     }
 
     if (room.status !== "waiting") {
-        throw new AppError("Jogo já iniciado ou finalizado", 409);
+        throw new AppError(`Room ${code} is not accepting players: status is ${room.status}`, 409, "GAME_ALREADY_STARTED");
     }
 
     if (room.players.includes(playerId)) {
@@ -77,7 +106,7 @@ export const joinRoom = async (code, playerId) => {
     }
 
     if (room.players.length >= room.maxPlayers) {
-        throw new AppError("Sala cheia", 409);
+        throw new AppError(`Room ${code} is full: ${room.maxPlayers} players already joined`, 409, "ROOM_FULL");
     }
 
     room.players.push(playerId);
@@ -88,10 +117,10 @@ export const joinRoom = async (code, playerId) => {
 export const updateRoom = async (id, hostId, data) => {
     const room = await Room.findById(id);
     if (!room) {
-        throw new AppError("Sala não encontrada", 404);
+        throw new AppError(`No room found with id ${id}`, 404, "ROOM_NOT_FOUND");
     }
     if (room.hostId !== hostId) {
-        throw new AppError("Apenas o host pode atualizar a sala", 403);
+        throw new AppError(`Only the host (${room.hostId}) can update this room`, 403, "UNAUTHORIZED");
     }
 
     if (data.maxPlayers !== undefined) room.maxPlayers = data.maxPlayers;
@@ -105,10 +134,10 @@ export const updateRoom = async (id, hostId, data) => {
 export const deleteRoom = async (id, hostId) => {
     const room = await Room.findById(id);
     if (!room) {
-        throw new AppError("Sala não encontrada", 404);
+        throw new AppError(`No room found with id ${id}`, 404, "ROOM_NOT_FOUND");
     }
     if (room.hostId !== hostId) {
-        throw new AppError("Apenas o host pode excluir a sala", 403);
+        throw new AppError(`Only the host (${room.hostId}) can delete this room`, 403, "UNAUTHORIZED");
     }
 
     await room.deleteOne();
@@ -118,7 +147,7 @@ export const deleteRoom = async (id, hostId) => {
 export const leaveRoom = async (code, playerId) => {
     const room = await Room.findOne({ code });
     if (!room) {
-        throw new AppError("Sala não encontrada", 404);
+        throw new AppError(`No room found with code ${code}`, 404, "ROOM_NOT_FOUND");
     }
 
     if (!room.players.includes(playerId)) {
@@ -129,7 +158,7 @@ export const leaveRoom = async (code, playerId) => {
     if (room.readyPlayers) {
         room.readyPlayers = room.readyPlayers.filter(id => id !== playerId);
     }
-    
+
     if (room.players.length === 0) {
         await room.deleteOne();
         return null;
@@ -139,27 +168,6 @@ export const leaveRoom = async (code, playerId) => {
         room.hostId = room.players[0];
     }
 
-    await room.save();
-    return await getRoomByCode(code);
-};
-
-export const togglePlayerReady = async (code, playerId) => {
-    const room = await Room.findOne({ code });
-    if (!room) {
-        throw new AppError("Sala não encontrada", 404);
-    }
-
-    if (!room.readyPlayers) {
-        room.readyPlayers = [];
-    }
-
-    const isReady = room.readyPlayers.includes(playerId);
-    if (isReady) {
-        room.readyPlayers = room.readyPlayers.filter(id => id !== playerId);
-    } else {
-        room.readyPlayers.push(playerId);
-    }
-    
     await room.save();
     return await getRoomByCode(code);
 };

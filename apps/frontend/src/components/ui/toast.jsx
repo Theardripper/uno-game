@@ -211,5 +211,5 @@ export {
   ToastDescription, Toaster, ToastPortal,
   ToastProvider,
   ToastTitle,
-  ToastViewport, useToastManager
+  ToastViewport, useToastManager, ToastIcon
 };

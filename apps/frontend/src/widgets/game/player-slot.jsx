@@ -1,77 +1,98 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useGame } from "@/store/game/use-game";
+import { useGameActions } from "@/features/game/hooks/use-game-actions";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/helpers/cn";
 
-/**
- * PlayerSlot representa um jogador na mesa.
- * Exibe Avatar, Nome, Cartas restantes e se é o turno dele.
- *
- * @param {Object} props
- * @param {string} props.playerId - ID do jogador para buscar no store
- * @param {string} props.position - top, left, right, bottom (para alinhar layouts)
- */
 export const PlayerSlot = ({ playerId, position = "top" }) => {
     const { players, currentTurn } = useGame();
+    const { catchUno } = useGameActions();
 
-    // Busca os dados do jogador no estado global
     const player = players.find(p => p.id === playerId);
 
     if (!player) return null;
 
     const isMyTurn = currentTurn === playerId;
+    const isLocal = position === "bottom";
 
-    // Define URL do Avatar (suporta fallback ou URL direta)
     const avatarUrl = player.avatarSeed
-        ? (player.avatarSeed.startsWith("http") ? player.avatarSeed : `https://api.dicebear.com/9.x/avataaars/svg?seed=${player.avatarSeed}`)
-        : "https://api.dicebear.com/9.x/avataaars/svg?seed=fallback";
+        ? (player.avatarSeed.startsWith("http") ? player.avatarSeed : `https://api.dicebear.com/9.x/bottts/svg?seed=${player.avatarSeed}`)
+        : "https://api.dicebear.com/9.x/bottts/svg?seed=fallback";
 
-    // Ajusta o layout dependendo da posição na tela
-    const isVertical = position === "left" || position === "right";
-    const layoutClasses = isVertical
-        ? "flex-col items-center text-center space-y-2"
-        : "flex-row items-center space-x-3";
+    if (isLocal) {
+        return (
+            <div className="relative flex flex-col items-center">
+                <Avatar className="w-16 h-16 rounded-2xl border-2 border-white/10 shadow-lg">
+                    <AvatarImage src={avatarUrl} alt="Você" className="object-cover" />
+                    <AvatarFallback className="rounded-2xl bg-[#2A1B19] text-white">VC</AvatarFallback>
+                </Avatar>
+                
+                <div className="absolute -bottom-2 -right-4 bg-[#2A1B19]/90 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">
+                    Você
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className={`relative flex ${layoutClasses} p-3 rounded-2xl transition-all duration-300 ${isMyTurn ? "bg-primary/20 border-2 border-primary shadow-lg shadow-primary/30 text-white" : "bg-black/50 border border-white/10 text-white/90"}`}>
+        <div className="relative flex flex-col items-center gap-3">
 
-            {/* Indicador animado de turno */}
-            <AnimatePresence>
-                {isMyTurn && (
-                    <motion.div
-                        key="turn-indicator"
-                        className="absolute -inset-1 rounded-2xl border-2 border-primary"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{
-                            opacity: [0.5, 1, 0.5],
-                            scale: [1, 1.03, 1]
-                        }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{
-                            repeat: Infinity,
-                            duration: 2,
-                            ease: "easeInOut"
-                        }}
-                    />
-                )}
-            </AnimatePresence>
+            <div className="relative">
+                {/* Glow intenso verde/amarelo quando é a vez */}
+                <AnimatePresence>
+                    {isMyTurn && (
+                        <motion.div
+                            key="glow-active"
+                            className="absolute inset-0 rounded-2xl blur-xl scale-150 bg-[#CCFF00]/60"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        />
+                    )}
+                </AnimatePresence>
 
-            <Avatar className={`border-2 ${isMyTurn ? "border-primary" : "border-muted"} ${isVertical ? "w-16 h-16" : "w-12 h-12"}`}>
-                <AvatarImage src={avatarUrl} alt={player.name} />
-                <AvatarFallback>{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-
-            <div className={`flex flex-col ${isVertical ? "items-center" : "items-start"}`}>
-                <span className="font-bold text-sm truncate max-w-25">{player.name}</span>
-                <Badge variant="secondary" className="mt-1 text-xs px-2 py-0">
-                    {player.cardCount ?? 7} Cartas
-                </Badge>
+                <Avatar className={cn(
+                    "relative w-16 h-16 rounded-2xl border-[3px] shadow-lg transition-colors",
+                    isMyTurn ? "border-[#CCFF00]" : "border-[#CCFF00]/20"
+                )}>
+                    <AvatarImage src={avatarUrl} alt={player.name} className="object-cover" />
+                    <AvatarFallback className="rounded-2xl bg-[#CCFF00]/20 text-[#CCFF00]">
+                        {player.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
             </div>
 
-            {/* Badge flutuante caso seja a vez */}
-            {isMyTurn && position === "top" && (
-                <Badge className="absolute -top-3 right-0 animate-bounce">Pensando...</Badge>
+            <div className="bg-[#2A1B19]/80 backdrop-blur-md border border-white/5 text-white/90 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm max-w-28 truncate text-center">
+                {player.name}
+            </div>
+
+            {player.cardCount === 1 && !player.saidUno && (
+                <button
+                    onClick={() => catchUno(player.id)}
+                    className="absolute -right-16 top-1/2 -translate-y-1/2 bg-[#C0000A] text-white text-[10px] font-black italic tracking-widest px-3 py-1.5 rounded-full shadow-lg border border-[#FF453A]/50 hover:scale-105 active:scale-95 transition-all z-10 animate-pulse"
+                >
+                    PEGAR!
+                </button>
             )}
+
+            {/* Mini Cartas traseiras */}
+            <div className="flex gap-1 justify-center max-w-[120px] flex-wrap">
+                <AnimatePresence>
+                    {Array.from({ length: Math.min(player.cardCount ?? 0, 15) }).map((_, i) => (
+                        <motion.div 
+                            key={`minicard-${playerId}-${i}`}
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0 }}
+                            className="w-4 h-6 rounded-[2px] bg-[#C0000A] border-[1.5px] border-white/90 shadow-sm" 
+                        />
+                    ))}
+                    {player.cardCount > 15 && (
+                        <span className="text-white/50 text-[10px] font-bold self-end ml-1">+{player.cardCount - 15}</span>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };
