@@ -54,7 +54,7 @@ export const getRoomByCode = async (code) => {
         id: p._id.toString(),
         name: p.name,
         tag: p.tag,
-        avatarSeed: `https://api.dicebear.com/9.x/avataaars/svg?seed=${p.avatar_seed}`,
+        avatarSeed: `https://api.dicebear.com/9.x/bottts/svg?seed=${p.avatar_seed}`,
         level: p.level,
         ready: room.readyPlayers ? room.readyPlayers.includes(p._id.toString()) : false
     }));

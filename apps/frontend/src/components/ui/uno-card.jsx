@@ -18,7 +18,7 @@ import { getCardImage } from "@/helpers/get-card-image";
 export const UnoCard = ({ color, type, value, isBack = false, style, className = "", ...props }) => {
 
     // O backend usa 'value' para tudo. Se 'type' não vier, assumimos que é igual a 'value'
-    const actualType = type || value;
+    const actualType = (value !== undefined && value !== null && type === "number") ? value : (value !== undefined && value !== null && !type) ? value : (type || value);
 
     const cardImage = isBack ? "/cards/back.png" : getCardImage({ color, value: actualType });
 
