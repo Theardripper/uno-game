@@ -48,7 +48,7 @@ export async function authMiddleware(socket, next) {
     socket.data.player = {
         id: playerId || socket.id,
         name: realName || `Player-${socket.id.slice(0, 5)}`,
-        avatarSeed: realAvatarSeed ? `https://api.dicebear.com/9.x/avataaars/svg?seed=${realAvatarSeed}` : undefined,
+        avatarSeed: realAvatarSeed ? `https://api.dicebear.com/9.x/bottts/svg?seed=${realAvatarSeed}` : undefined,
         level: realLevel,
     };
 

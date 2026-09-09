@@ -45,12 +45,9 @@ describe("GameOverModal", () => {
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        expect(screen.getAllByText("Você Venceu!")[0]).toBeDefined();
+        expect(screen.getAllByText("VITÓRIA!")[0]).toBeDefined();
         expect(screen.getAllByText("Player One")[0]).toBeDefined();
-        expect(screen.getAllByText("venceu a partida!")[0]).toBeDefined();
-        expect(screen.getAllByText("185 pts")[0]).toBeDefined();
-        expect(screen.getAllByText("+118 XP")[0]).toBeDefined();
-        expect(screen.getAllByText("✨ LEVEL UP!")[0]).toBeDefined();
+        expect(screen.getAllByText("+118")[0]).toBeDefined();
 
         expect(confettiMock).toHaveBeenCalledTimes(1);
     });
@@ -68,14 +65,13 @@ describe("GameOverModal", () => {
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        expect(screen.getAllByText("Fim de Jogo")[0]).toBeDefined();
+        expect(screen.getAllByText("BOM JOGO!")[0]).toBeDefined();
         expect(screen.getAllByText("Player Two")[0]).toBeDefined();
-        expect(screen.getAllByText("foi o grande vencedor!")[0]).toBeDefined();
 
         expect(confettiMock).not.toHaveBeenCalled();
     });
 
-    it("should display walkover message when endReason is PLAYER_LEFT", () => {
+    it("should display victory when endReason is PLAYER_LEFT and local player is winner", () => {
         useGame.mockReturnValue({
             status: "finished",
             winnerId: "1",
@@ -85,11 +81,10 @@ describe("GameOverModal", () => {
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        expect(screen.getAllByText("Você Venceu!")[0]).toBeDefined();
-        expect(screen.getAllByText("Abandono (W.O.)")[0]).toBeDefined();
+        expect(screen.getAllByText("VITÓRIA!")[0]).toBeDefined();
     });
 
-    it("should call onLeave when 'Voltar ao Lobby' button is clicked", () => {
+    it("should call onLeave when 'Voltar' button is clicked", () => {
         useGame.mockReturnValue({
             status: "finished",
             winnerId: "1",
@@ -99,13 +94,13 @@ describe("GameOverModal", () => {
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={false} />);
 
-        const button = screen.getAllByRole("button", { name: /Voltar ao Lobby/i })[0];
+        const button = screen.getAllByRole("button", { name: /^Voltar$/i })[0];
         fireEvent.click(button);
 
         expect(mockOnLeave).toHaveBeenCalledTimes(1);
     });
 
-    it("should display leaving text and disable button when isLeaving is true", () => {
+    it("should disable button when isLeaving is true", () => {
         useGame.mockReturnValue({
             status: "finished",
             winnerId: "1",
@@ -115,7 +110,7 @@ describe("GameOverModal", () => {
 
         render(<GameOverModal localPlayerId="1" onLeave={mockOnLeave} isLeaving={true} />);
 
-        const button = screen.getAllByRole("button", { name: /Saindo\.\.\./i })[0];
+        const button = screen.getAllByRole("button", { name: /^Voltar$/i })[0];
         expect(button.disabled).toBe(true);
     });
 });

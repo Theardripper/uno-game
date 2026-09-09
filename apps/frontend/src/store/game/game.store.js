@@ -28,6 +28,9 @@ import { GAME_CONSTANTS } from "@/constants/game.constants";
  * @property {Card[]} hand - A mão de cartas do jogador local
  * @property {number} deckCount - Quantas cartas restam no deck de compras
  * @property {'waiting'|'playing'|'finished'} status - Status geral do jogo
+ * @property {'clockwise'|'counter_clockwise'} direction - Sentido de rotação dos turnos
+ * @property {{id: string, playerId: string, playerName: string}|null} unoAnnouncement - Aviso ativo de "UNO!" pra mesa toda
+ * @property {Array} history - Log de ações recentes da partida
  */
 
 /** @type {GameState} */
@@ -39,9 +42,13 @@ const initialState = {
     hand: [],
     deckCount: GAME_CONSTANTS.TOTAL_DECK_CARDS,
     status: "waiting",
+    direction: "clockwise",
+    unoAnnouncement: null,
     winnerId: null,
     endReason: null,
     matchResults: null,
+    matchDetails: null,
+    history: [],
 };
 
 export const useGameStore = create(
@@ -55,6 +62,9 @@ export const useGameStore = create(
                 setColor: (color) => set({ currentColor: color }, false, "game/setColor"),
                 updatePlayers: (players) => set({ players }, false, "game/updatePlayers"),
                 setHand: (hand) => set({ hand }, false, "game/setHand"),
+                announceUno: (playerId, playerName) =>
+                    set({ unoAnnouncement: { id: crypto.randomUUID(), playerId, playerName } }, false, "game/announceUno"),
+                clearUnoAnnouncement: () => set({ unoAnnouncement: null }, false, "game/clearUnoAnnouncement"),
                 patchGame: (partialGame) =>
                     set((state) => ({ ...state, ...partialGame }), false, "game/patchGame"),
                 reset: () => set(initialState, false, "game/reset"),

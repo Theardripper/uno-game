@@ -2,6 +2,7 @@
 
 import { success } from "#shared/helpers/response.js";
 import * as authService from "./auth.service.js";
+import { blacklistToken } from "./token-blacklist.js";
 
 /**
  * Auth controller — thin HTTP layer.
@@ -23,7 +24,7 @@ export async function signUp(req, res, next) {
 
         const data = await authService.signUp(name, email, password);
 
-        return success(res, data, "Conta criada com sucesso.", 201);
+        return success(res, data, "Account created successfully.", 201);
     } catch (err) {
         next(err);
     }
@@ -42,7 +43,7 @@ export async function signIn(request, response, next) {
 
         const data = await authService.signIn(email, password);
 
-        return success(response, data, "Logado com sucesso.");
+        return success(response, data, "Logged successfully.");
     } catch (err) {
         next(err);
     }
@@ -62,6 +63,22 @@ export async function guestLogin(request, response, next) {
         const data = await authService.guest(name, avatarSeed);
 
         return success(response, data, "Guest account created.", 201);
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * POST /api/auth/logout
+ *
+ * @param {import('express').Request} req
+ * @param {Response} res
+ * @param {NextFunction} next
+ */
+export async function logout(req, res, next) {
+    try {
+        blacklistToken(req.token);
+        return success(res, null, "Logout successfully.");
     } catch (err) {
         next(err);
     }

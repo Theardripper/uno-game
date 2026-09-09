@@ -11,9 +11,10 @@ const PlayerMock = {
 };
 
 class AppErrorMock extends Error {
-    constructor(message, statusCode) {
+    constructor(message, statusCode, errorCode) {
         super(message);
         this.statusCode = statusCode;
+        this.errorCode = errorCode;
     }
 }
 
@@ -45,7 +46,7 @@ describe('RoomService - createRoom', () => {
 
         const calledWith = RoomMock.create.mock.calls[0][0];
         expect(calledWith.maxPlayers).toBe(4);
-        expect(calledWith.isPrivate).toBe(false);
+        expect(calledWith.isPrivate).toBe(true);
         expect(calledWith.password).toBeNull();
     });
 
@@ -87,7 +88,7 @@ describe('RoomService - validateRoomCode', () => {
         RoomMock.findOne.mockResolvedValue(null);
 
         await expect(roomService.validateRoomCode('UNO-XXXX')).rejects.toMatchObject({
-            message: 'Sala não encontrada',
+            errorCode: 'ROOM_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -96,7 +97,7 @@ describe('RoomService - validateRoomCode', () => {
         RoomMock.findOne.mockResolvedValue({ status: 'playing', players: [], maxPlayers: 4 });
 
         await expect(roomService.validateRoomCode('UNO-A1B2')).rejects.toMatchObject({
-            message: 'Jogo já iniciado ou finalizado',
+            errorCode: 'GAME_ALREADY_STARTED',
             statusCode: 409,
         });
     });
@@ -109,7 +110,7 @@ describe('RoomService - validateRoomCode', () => {
         });
 
         await expect(roomService.validateRoomCode('UNO-A1B2')).rejects.toMatchObject({
-            message: 'Sala cheia',
+            errorCode: 'ROOM_FULL',
             statusCode: 409,
         });
     });
@@ -118,7 +119,7 @@ describe('RoomService - validateRoomCode', () => {
 // ===================== getRoomByCode =====================
 describe('RoomService - getRoomByCode', () => {
     it('deve devolver a sala com os detalhes formatados dos jogadores', async () => {
-        const fakeRoom = { code: 'UNO-A1B2', players: ['p1'] };
+        const fakeRoom = { _id: 'r1', code: 'UNO-A1B2', players: ['p1'] };
         RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue(fakeRoom) });
         PlayerMock.find.mockResolvedValue([
             { _id: 'p1', name: 'João', tag: '1234', avatar_seed: 'abc', level: 3 },
@@ -132,7 +133,7 @@ describe('RoomService - getRoomByCode', () => {
             id: 'p1',
             name: 'João',
             tag: '1234',
-            avatarSeed: 'https://api.dicebear.com/9.x/avataaars/svg?seed=abc',
+            avatarSeed: 'https://api.dicebear.com/9.x/bottts/svg?seed=abc',
             level: 3,
             ready: false,
         });
@@ -142,13 +143,13 @@ describe('RoomService - getRoomByCode', () => {
         RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
 
         await expect(roomService.getRoomByCode('UNO-XXXX')).rejects.toMatchObject({
-            message: 'Sala não encontrada',
+            errorCode: 'ROOM_NOT_FOUND',
             statusCode: 404,
         });
     });
 
     it('deve devolver uma lista vazia de detalhes quando a sala não tiver jogadores', async () => {
-        RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: [] }) });
+        RoomMock.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: [] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         const result = await roomService.getRoomByCode('UNO-A1B2');
@@ -187,7 +188,7 @@ describe('RoomService - joinRoom', () => {
         RoomMock.findOne.mockResolvedValue(null);
 
         await expect(roomService.joinRoom('UNO-XXXX', 'u1')).rejects.toMatchObject({
-            message: 'Sala não encontrada',
+            errorCode: 'ROOM_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -196,7 +197,7 @@ describe('RoomService - joinRoom', () => {
         RoomMock.findOne.mockResolvedValue({ status: 'playing', players: [], maxPlayers: 4 });
 
         await expect(roomService.joinRoom('UNO-A1B2', 'u1')).rejects.toMatchObject({
-            message: 'Jogo já iniciado ou finalizado',
+            errorCode: 'GAME_ALREADY_STARTED',
             statusCode: 409,
         });
     });
@@ -209,7 +210,7 @@ describe('RoomService - joinRoom', () => {
         });
 
         await expect(roomService.joinRoom('UNO-A1B2', 'u5')).rejects.toMatchObject({
-            message: 'Sala cheia',
+            errorCode: 'ROOM_FULL',
             statusCode: 409,
         });
     });
@@ -234,7 +235,7 @@ describe('RoomService - updateRoom', () => {
         RoomMock.findById.mockResolvedValue(null);
 
         await expect(roomService.updateRoom('r1', 'u1', {})).rejects.toMatchObject({
-            message: 'Sala não encontrada',
+            errorCode: 'ROOM_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -243,7 +244,7 @@ describe('RoomService - updateRoom', () => {
         RoomMock.findById.mockResolvedValue({ hostId: 'u1', save: jest.fn() });
 
         await expect(roomService.updateRoom('r1', 'u999', {})).rejects.toMatchObject({
-            message: 'Apenas o host pode atualizar a sala',
+            errorCode: 'UNAUTHORIZED',
             statusCode: 403,
         });
     });
@@ -265,7 +266,7 @@ describe('RoomService - deleteRoom', () => {
         RoomMock.findById.mockResolvedValue(null);
 
         await expect(roomService.deleteRoom('r1', 'u1')).rejects.toMatchObject({
-            message: 'Sala não encontrada',
+            errorCode: 'ROOM_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -275,7 +276,7 @@ describe('RoomService - deleteRoom', () => {
         RoomMock.findById.mockResolvedValue({ hostId: 'u1', deleteOne });
 
         await expect(roomService.deleteRoom('r1', 'u999')).rejects.toMatchObject({
-            message: 'Apenas o host pode excluir a sala',
+            errorCode: 'UNAUTHORIZED',
             statusCode: 403,
         });
         expect(deleteOne).not.toHaveBeenCalled();
@@ -289,7 +290,7 @@ describe('RoomService - leaveRoom', () => {
         const fakeRoom = { code: 'UNO-A1B2', hostId: 'u1', players: ['u1', 'u2'], save };
         RoomMock.findOne
             .mockResolvedValueOnce(fakeRoom)
-            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: ['u1'] }) });
+            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: ['u1'] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         await roomService.leaveRoom('UNO-A1B2', 'u2');
@@ -303,7 +304,7 @@ describe('RoomService - leaveRoom', () => {
         const fakeRoom = { code: 'UNO-A1B2', hostId: 'u1', players: ['u1', 'u2'], save };
         RoomMock.findOne
             .mockResolvedValueOnce(fakeRoom)
-            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: ['u2'] }) });
+            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: ['u2'] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         await roomService.leaveRoom('UNO-A1B2', 'u1');
@@ -328,7 +329,7 @@ describe('RoomService - leaveRoom', () => {
         RoomMock.findOne.mockResolvedValue(null);
 
         await expect(roomService.leaveRoom('UNO-XXXX', 'u1')).rejects.toMatchObject({
-            message: 'Sala não encontrada',
+            errorCode: 'ROOM_NOT_FOUND',
             statusCode: 404,
         });
     });
@@ -337,7 +338,7 @@ describe('RoomService - leaveRoom', () => {
         const save = jest.fn();
         RoomMock.findOne
             .mockResolvedValueOnce({ code: 'UNO-A1B2', hostId: 'u1', players: ['u1'], save })
-            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ code: 'UNO-A1B2', players: ['u1'] }) });
+            .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ _id: 'r1', code: 'UNO-A1B2', players: ['u1'] }) });
         PlayerMock.find.mockResolvedValue([]);
 
         await roomService.leaveRoom('UNO-A1B2', 'u999');

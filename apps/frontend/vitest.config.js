@@ -9,6 +9,12 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    globals: true,
+    setupFiles: "./jest.setup.js",
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+    },
   },
   // Isso diz ao Vitest para ignorar esses arquivos durante os testes.
   exclude: [

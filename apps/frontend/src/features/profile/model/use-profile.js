@@ -1,6 +1,6 @@
 //@ts-check
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getProfile, updateProfile } from "@/services/profile.service";
+import { getProfile, updateProfile, getProfileStats, getProfileHistory } from "@/services/profile.service";
 import { useAppToast } from "@/hooks/use-app-toast";
 
 export const PROFILE_QUERY_KEY = ["user"];
@@ -9,6 +9,22 @@ export function useUserQuery() {
     return useQuery({
         queryKey: PROFILE_QUERY_KEY,
         queryFn: getProfile,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
+export function useProfileStatsQuery() {
+    return useQuery({
+        queryKey: [...PROFILE_QUERY_KEY, "stats"],
+        queryFn: getProfileStats,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
+export function useProfileHistoryQuery() {
+    return useQuery({
+        queryKey: [...PROFILE_QUERY_KEY, "history"],
+        queryFn: getProfileHistory,
         staleTime: 1000 * 60 * 5,
     });
 }
