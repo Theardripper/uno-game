@@ -236,11 +236,10 @@ class GameEngine {
 
         switch (cardToPlay.value) {
             case "reverse":
+                game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 // Se tiver apenas 2 jogadores, reverse funciona como skip
                 if (game.players.length === 2) {
                     stepsToAdvance = 2;
-                } else {
-                    game.direction = game.direction === "clockwise" ? "counter_clockwise" : "clockwise";
                 }
                 break;
             case "skip":
