@@ -61,6 +61,7 @@ export const errorHandler = (err, req, res, next) => {
     }
 
     // Unexpected errors — never expose internals
+    console.error(err);
     logger.error('Unhandled error', { error: err });
     return res.status(500).json({
         error: {

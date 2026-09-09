@@ -133,7 +133,7 @@ describe('RoomService - getRoomByCode', () => {
             id: 'p1',
             name: 'João',
             tag: '1234',
-            avatarSeed: 'https://api.dicebear.com/9.x/avataaars/svg?seed=abc',
+            avatarSeed: 'https://api.dicebear.com/9.x/bottts/svg?seed=abc',
             level: 3,
             ready: false,
         });
