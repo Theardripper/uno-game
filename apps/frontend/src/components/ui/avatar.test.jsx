@@ -10,6 +10,21 @@ import {
   AvatarImage,
 } from "./avatar";
 
+import { vi } from "vitest";
+
+vi.mock("@base-ui/react/avatar", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    Avatar: {
+      ...actual.Avatar,
+      Image: function MockImage({ src, alt, ...props }) {
+        return <img src={src} alt={alt} {...props} />;
+      },
+    },
+  };
+});
+
 describe("Componente Avatar e Subcomponentes", () => {
   describe("Avatar (Root)", () => {
     it("deve renderizar o avatar com atributos e tamanho padrão", () => {

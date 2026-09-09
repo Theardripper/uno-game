@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { createRef } from "react";
 
 import { Input } from "./input";
@@ -31,7 +32,7 @@ describe("Componente Input", () => {
   });
 
   it("deve disparar a função onChange ao alterar o valor", async () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     const user = userEvent.setup();
 
     render(<Input onChange={handleChange} placeholder="Buscar" />);
@@ -43,7 +44,7 @@ describe("Componente Input", () => {
   });
 
   it("deve aplicar o estado desabilitado e impedir digitação", async () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     const user = userEvent.setup();
 
     render(<Input disabled onChange={handleChange} placeholder="Bloqueado" />);

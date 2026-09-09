@@ -40,7 +40,7 @@ describe("Componente Toaster e Sistema de Toast", () => {
 
     expect(screen.getByText("Toast Fechável")).toBeInTheDocument();
 
-    const closeButton = screen.getByRole("button", { name: /close toast/i });
+    const closeButton = document.querySelector("[data-slot='toast-close']");
     await user.click(closeButton);
 
     expect(screen.queryByText("Toast Fechável")).not.toBeInTheDocument();

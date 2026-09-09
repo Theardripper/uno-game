@@ -1,15 +1,19 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { UnoCard } from "./uno-card";
 
-jest.mock("next/image", () => {
-  return function MockImage({ src, alt, onError, ...props }) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt} onError={onError} {...props} />;
+import { vi } from "vitest";
+
+vi.mock("next/image", () => {
+  return {
+    default: function MockImage({ src, alt, onError, ...props }) {
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={src} alt={alt} onError={onError} {...props} />;
+    }
   };
 });
 
-jest.mock("@/helpers/get-card-image", () => ({
-  getCardImage: jest.fn(({ color, value }) => `/cards/${color}_${value}.png`),
+vi.mock("@/helpers/get-card-image", () => ({
+  getCardImage: vi.fn(({ color, value }) => `/cards/${color}_${value}.png`),
 }));
 
 describe("Componente UnoCard", () => {

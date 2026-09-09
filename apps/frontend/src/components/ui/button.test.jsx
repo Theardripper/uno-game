@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { createRef } from "react";
 
 import { Button, buttonVariants } from "./button";
@@ -56,7 +57,7 @@ describe("Componente Button", () => {
   });
 
   it("deve disparar a função onClick quando clicado", async () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     const user = userEvent.setup();
 
     render(<Button onClick={handleClick}>Clique</Button>);
@@ -68,7 +69,7 @@ describe("Componente Button", () => {
   });
 
   it("deve respeitar a propriedade disabled", async () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     const user = userEvent.setup();
 
     render(

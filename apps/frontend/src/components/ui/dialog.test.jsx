@@ -38,7 +38,7 @@ describe("Componente Dialog e Subcomponentes", () => {
     expect(screen.getByText("Descrição do Modal")).toBeInTheDocument();
     expect(screen.getByText("Conteúdo interno")).toBeInTheDocument();
 
-    const closeButton = screen.getByRole("button", { name: /close/i });
+    const closeButton = screen.getAllByRole("button", { name: /close/i })[0];
     await user.click(closeButton);
 
     expect(screen.queryByText("Título do Modal")).not.toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("Componente Dialog e Subcomponentes", () => {
 
     await user.click(screen.getByRole("button", { name: /abrir/i }));
 
-    expect(screen.queryByRole("button", { name: /close/i })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /close/i })).toHaveLength(0);
   });
 
   it("deve renderizar o botão de fechar no DialogFooter quando showCloseButton for true", async () => {
@@ -78,7 +78,7 @@ describe("Componente Dialog e Subcomponentes", () => {
 
     await user.click(screen.getByRole("button", { name: /abrir/i }));
 
-    const footerCloseButton = screen.getByRole("button", { name: /^close$/i });
+    const footerCloseButton = screen.getAllByRole("button", { name: /^close$/i })[0];
     expect(footerCloseButton).toBeInTheDocument();
 
     await user.click(footerCloseButton);

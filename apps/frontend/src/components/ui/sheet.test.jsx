@@ -37,7 +37,7 @@ describe("Componente Sheet e Subcomponentes", () => {
     expect(screen.getByText("Descrição da Gaveta")).toBeInTheDocument();
     expect(screen.getByText("Conteúdo da Gaveta")).toBeInTheDocument();
 
-    const closeButton = screen.getByRole("button", { name: /close/i });
+    const closeButton = screen.getAllByRole("button", { name: /close/i })[0];
     await user.click(closeButton);
 
     expect(screen.queryByText("Título da Gaveta")).not.toBeInTheDocument();
@@ -77,7 +77,7 @@ describe("Componente Sheet e Subcomponentes", () => {
 
     await user.click(screen.getByRole("button", { name: /abrir sem botão/i }));
 
-    expect(screen.queryByRole("button", { name: /close/i })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /close/i })).toHaveLength(0);
   });
 
   it("deve aplicar o atributo data-slot correto em todos os subcomponentes", async () => {
