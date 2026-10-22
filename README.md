@@ -175,4 +175,4 @@ Atuei no **time de backend**. Principais entregas:
 
 ## 📄 Licença
 
-[PREENCHER: ex. MIT, ou "Projeto acadêmico"]
+Todos direitos reservados.
